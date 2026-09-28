@@ -15,6 +15,7 @@ A native, keyboard-first home for everything you copy.</p>
 </p>
 
 <p align="center">
+  <a href="https://github.com/AugmentedMode/Stash/releases/latest">Download for Mac</a> ·
   <a href="#get-started">Get started</a> ·
   <a href="docs/USAGE.md">User guide</a> ·
   <a href="CONTRIBUTING.md">Contribute</a> ·
@@ -43,6 +44,37 @@ Built with **SwiftUI and AppKit**, with Liquid Glass on macOS 26 and native mate
 on earlier supported versions. The app has **no third-party runtime dependencies**.
 
 ## Get started
+
+### Install with Homebrew
+
+Requires an **Apple silicon Mac** and **macOS 14 or later**.
+
+```sh
+brew tap augmentedmode/stash
+brew install --cask augmentedmode/stash/stash
+```
+
+Or [download the latest DMG](https://github.com/AugmentedMode/Stash/releases/latest),
+open it, and drag Stash into Applications.
+
+**First launch:** Stash is ad-hoc signed, without Apple Developer ID signing or
+notarization. If macOS blocks it, attempt to open Stash, then go to **System
+Settings → Privacy & Security → Open Anyway** and confirm if you trust this
+release. See [Apple's instructions](https://support.apple.com/102445).
+
+Open Stash from Applications and choose **Start collecting**. Quick paste is
+optional and needs Accessibility permission. After an update, you may need to
+remove and re-add Stash in **Privacy & Security → Accessibility**.
+
+To update, quit Stash, then run:
+
+```sh
+brew update
+brew upgrade --cask augmentedmode/stash/stash
+```
+
+Downloads currently support Apple silicon only. Intel users can build from source;
+Intel hardware has not been tested.
 
 ### Build from source
 

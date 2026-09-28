@@ -6,6 +6,12 @@ Drag Stash into Applications. Open it from Applications, then eject this disk.
 Requires an Apple silicon Mac running macOS 14 or later. Liquid Glass is
 available on macOS 26; older systems use a native translucent material.
 
+FIRST LAUNCH
+This release is ad-hoc signed, not Apple Developer ID signed or notarized.
+If macOS blocks Stash, attempt to open it, then open System Settings >
+Privacy & Security > Open Anyway. Confirm only if you trust this release.
+Apple's instructions: https://support.apple.com/102445
+
 FIRST MINUTE
 1. Choose Start collecting. Only new copies are collected.
 2. Copy text, a link, an image, or a file in another app.
@@ -45,7 +51,12 @@ History is stored locally, not in a separately encrypted vault.
 
 UPDATING
 Quit Stash before replacing it in Applications. Your history and preferences
-are stored separately and remain available after replacement.
+are stored separately and remain available after replacement. You may need to
+remove and re-add Stash in Privacy & Security > Accessibility after updates.
+
+Homebrew users: quit Stash, then run:
+  brew update
+  brew upgrade --cask augmentedmode/stash/stash
 
 IF SOMETHING SEEMS OFF
 - Stash will not collect copies made before you clicked Start collecting.

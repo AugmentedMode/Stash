@@ -17,16 +17,6 @@ trap 'rm -rf "$stage"' EXIT
 /usr/bin/ditto "$app" "$stage/Stash.app"
 ln -s /Applications "$stage/Applications"
 cp docs/Start-here.txt "$stage/Start here.txt"
-if [[ -z "${STASH_SIGN_IDENTITY:-}" ]]; then
-  cat >> "$stage/Start here.txt" <<'NOTE'
-
-PREVIEW DISTRIBUTION
-This build is ad-hoc signed, not Developer ID signed or notarized. macOS may
-block an app received through a download or sharing service. For a normal
-installation experience, request the signed and notarized release. Do not
-disable Gatekeeper or other security protections to install this preview.
-NOTE
-fi
 if PYTHONPATH="$PWD/.build/dmg-tools" python3 -c 'import ds_store' 2>/dev/null; then
   PYTHONPATH="$PWD/.build/dmg-tools" python3 scripts/dmg-layout.py "$stage"
 else
@@ -38,5 +28,5 @@ if [[ -n "${STASH_SIGN_IDENTITY:-}" ]]; then
   codesign --force --timestamp --sign "$STASH_SIGN_IDENTITY" "$output"
 fi
 hdiutil verify "$output"
-shasum -a 256 "$output" > "$output.sha256"
+(cd dist && shasum -a 256 "${output:t}") > "$output.sha256"
 print "Packaged $output"
