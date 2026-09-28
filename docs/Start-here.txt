@@ -1,0 +1,62 @@
+STASH
+A little space for everything you copy.
+
+INSTALL
+Drag Stash into Applications. Open it from Applications, then eject this disk.
+Requires an Apple silicon Mac running macOS 14 or later. Liquid Glass is
+available on macOS 26; older systems use a native translucent material.
+
+FIRST MINUTE
+1. Choose Start collecting. Only new copies are collected.
+2. Copy text, a link, an image, or a file in another app.
+3. Press Command + Shift + V. Type a few words to find a clip.
+4. Choose a clip. In copy mode, Stash returns you to your previous app;
+   press Command + V there to paste.
+5. For one-step paste, open Stash Settings and Enable Quick Paste. macOS
+   asks you to grant Accessibility permission. This is optional.
+
+Stash lives in the menu bar. Escape closes the palette; capture continues.
+Click the menu-bar stack icon to reopen it. Right-click it to pause or quit.
+Open Settings with Command + comma.
+
+KEYBOARD
+Up / Down             Select a clip
+Left / Right          Switch categories (when search is empty)
+Option + Left / Right Switch categories while searching
+Return                Paste, or copy and return in copy mode
+Shift + Return        Paste as plain text
+Command + 1 to 9      Use a result directly
+Command + P           Pin or unpin
+Command + Delete      Delete a clip
+Command + Z           Undo while the Undo action is visible
+Command + Y           Preview the selected clip
+Escape                Close preview, then clear search, then close Stash
+
+YOUR HISTORY
+Everything stays on your Mac. No account, server, analytics, or network calls.
+History is kept for 30 days by default. Pins survive normal history clearing.
+Settings lets you pause capture, exclude apps, change retention, or keep
+history only until quit. Session-only mode also discards pins at quit.
+
+Password-manager apps and concealed clipboard formats are excluded. Other
+apps may not mark secrets; unmarked sensitive text can enter history.
+File clips point to original files. If a file moves, copy it again in Finder.
+History is stored locally, not in a separately encrypted vault.
+
+UPDATING
+Quit Stash before replacing it in Applications. Your history and preferences
+are stored separately and remain available after replacement.
+
+IF SOMETHING SEEMS OFF
+- Stash will not collect copies made before you clicked Start collecting.
+- Check that capture is not paused and the source app is not excluded.
+- If a category is empty, choose All and clear the search.
+- If Command + Shift + V conflicts with another app, use the menu-bar icon.
+- One-step paste requires Accessibility permission; copy mode works without it.
+
+ENERGY USE
+Stash pauses its capture timer during sleep or an inactive user session.
+Low Power Mode checks the clipboard every 1.2 seconds instead of 0.6 seconds.
+Very rapid copies between checks may be missed. Saved history updates are
+batched within one second and flushed on normal quit and system sleep.
+An abrupt crash can lose the most recent second of changes.
