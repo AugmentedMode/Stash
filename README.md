@@ -1,5 +1,6 @@
-<img width="732" height="672" alt="Screenshot 2026-09-28 at 2 15 09 AM" src="https://github.com/user-attachments/assets/318ad790-8c1a-498d-95cc-5a5f4b26619d" />
-
+<p align="center">
+  <img src="docs/images/stash-icon.png" width="88" height="88" alt="Stash app icon">
+</p>
 
 <h1 align="center">Stash</h1>
 
@@ -21,7 +22,6 @@ A native, keyboard-first home for everything you copy.</p>
 </p>
 
 <p align="center">
-
   <img src="docs/images/stash.jpg" width="740" alt="Stash's native macOS palette showing pinned notes, a color swatch, screenshot thumbnails, and keyboard shortcuts.">
   <br><sub>Captured from the native app using synthetic sample content. No personal clipboard data.</sub>
 </p>
