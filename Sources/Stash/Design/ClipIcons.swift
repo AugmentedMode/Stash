@@ -44,11 +44,8 @@ struct LinkIcon: View {
     private static let bundled: [LinkPresentation.Service: NSImage] = {
         var images: [LinkPresentation.Service: NSImage] = [:]
         for service in LinkPresentation.Service.allCases {
-            let url =
-                Bundle.main.url(
-                    forResource: service.rawValue, withExtension: "png", subdirectory: "ServiceIcons")
-                ?? Bundle.module.url(
-                    forResource: service.rawValue, withExtension: "png", subdirectory: "ServiceIcons")
+            let url = BundledResources.bundle.url(
+                forResource: service.rawValue, withExtension: "png", subdirectory: "ServiceIcons")
             if let url, let image = NSImage(contentsOf: url) { images[service] = image }
         }
         return images

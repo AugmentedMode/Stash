@@ -132,3 +132,18 @@ active screenshot observer. The baseline had 33 checks; the refactor has 40.
 Repeat manual keyboard navigation, prompt editing, inline Settings, screenshot
 pause/resume, and cross-app paste flows after UI changes. Automated core checks
 do not verify those interactions or older macOS compatibility.
+
+## Public download on fresh Macs
+
+Run the **Public download smoke test** workflow manually in GitHub Actions after
+updating the Homebrew tap. It uses fresh Apple silicon runners on macOS 14, 15,
+and 26, installs the published cask without checking out or building the app,
+verifies signature integrity, and runs normal and sample-data startup for 15
+seconds each. The sample-data run exercises service-icon lookups and catches
+accidental dependencies on the developer's SwiftPM resource directory.
+
+This checks installation and process survival, not interactive UI correctness.
+Gatekeeper assessment is recorded without changing quarantine or granting an
+exception. Finder's Open Anyway flow, Accessibility consent, and cross-app paste
+still need interactive testing. GitHub runners have developer tools preinstalled
+and are not identical to a factory-reset consumer Mac.

@@ -28,10 +28,8 @@ enum CategoryArtwork: String, CaseIterable {
     private static let images: [Self: NSImage] = {
         var images: [Self: NSImage] = [:]
         for kind in allCases {
-            let url =
-                Bundle.main.url(forResource: kind.rawValue, withExtension: "pdf", subdirectory: "CategoryArt")
-                ?? Bundle.module.url(
-                    forResource: kind.rawValue, withExtension: "pdf", subdirectory: "CategoryArt")
+            let url = BundledResources.bundle.url(
+                forResource: kind.rawValue, withExtension: "pdf", subdirectory: "CategoryArt")
             if let url, let image = NSImage(contentsOf: url) { images[kind] = image }
         }
         return images
