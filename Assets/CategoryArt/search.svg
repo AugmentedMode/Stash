@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="120" viewBox="0 0 160 120" role="img" aria-label="search">
+<ellipse cx="80" cy="105" rx="44" ry="5" fill="#171923" stroke="none" stroke-width="1" opacity="0.22" stroke-linecap="round" stroke-linejoin="round"/>
+<g transform="rotate(-13 80 60)">
+<rect x="39" y="24" width="64" height="77" rx="9" fill="#36384F" stroke="#68678A" stroke-width="0.7" opacity="1" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<path d="M 56 18 L 97 18 L 113 34 L 113 93 C 113 100 113 100 106 100 L 56 100 C 49 100 49 100 49 93 L 49 25 C 49 18 49 18 56 18 Z " fill="#565875" stroke="#9290BC" stroke-width="0.8" opacity="1" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 97 19 L 97 29 C 97 34 101 34 103 34 L 112 34 Z " fill="#C1BEFF" stroke="none" stroke-width="2" opacity="0.8" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="60" y="36" width="27" height="3" rx="1.5" fill="#C1BEFF" stroke="none" stroke-width="1" opacity="0.85" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="60" y="45" width="20" height="3" rx="1.5" fill="#C1BEFF" stroke="none" stroke-width="1" opacity="0.4" stroke-linecap="round" stroke-linejoin="round"/>
+<ellipse cx="99" cy="75" rx="17" ry="17" fill="#36384F" stroke="none" stroke-width="1" opacity="1" stroke-linecap="round" stroke-linejoin="round"/>
+<ellipse cx="99" cy="75" rx="12" ry="12" fill="#696C94" stroke="none" stroke-width="1" opacity="1" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 111 88 L 125 102" fill="none" stroke="#C1BEFF" stroke-width="6" opacity="1" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 94 68 C 97 64 102 65 104 68" fill="none" stroke="#EBE9FF" stroke-width="1.5" opacity="1" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 18 39 L 24 39 M 21 36 L 21 42" fill="none" stroke="#C1BEFF" stroke-width="1.3" opacity="0.65" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 135 75 L 143 75 M 139 71 L 139 79" fill="none" stroke="#C1BEFF" stroke-width="1.3" opacity="0.65" stroke-linecap="round" stroke-linejoin="round"/>
+<ellipse cx="130" cy="15" rx="1.6" ry="1.6" fill="#C1BEFF" stroke="none" stroke-width="1" opacity="0.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

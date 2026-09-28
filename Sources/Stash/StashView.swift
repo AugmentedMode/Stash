@@ -146,8 +146,8 @@ struct StashView: View {
         Group {
             if model.results.isEmpty {
                 VStack(spacing: 12) {
-                    ClipStackIllustration(symbol: !model.query.isEmpty ? "magnifyingglass" : model.pinnedOnly ? "pin.fill" : "text.alignleft")
-                        .frame(height: 100).padding(.bottom, 3)
+                    CategoryIllustration(artwork: emptyArtwork).id(emptyArtwork)
+                        .padding(.bottom, 3)
                     Text(emptyTitle)
                         .font(.system(size: 17, weight: .medium))
                     Text(emptyMessage)
@@ -197,6 +197,11 @@ struct StashView: View {
                 }
             }
         }.frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    private var emptyArtwork: CategoryArtwork {
+        if !model.query.isEmpty { return .search }
+        if model.pinnedOnly { return .pinned }
+        return model.category.flatMap { CategoryArtwork(rawValue: $0.rawValue) } ?? .all
     }
     private var emptyTitle: String {
         if !model.query.isEmpty { return "No clips found" }
@@ -315,7 +320,7 @@ struct PaletteRow: View {
         } else if let file = clip.fileURLs.first {
             Image(nsImage: NSWorkspace.shared.icon(forFile: file.path)).resizable().scaledToFit()
         } else {
-            Image(systemName: clip.kind == .link ? "globe" : clip.kind.symbol).font(.system(size: 19, weight: .regular)).foregroundStyle(Color.white.opacity(0.55))
+            CategoryIllustration(artwork: CategoryArtwork(rawValue: clip.kind.rawValue) ?? .all, compact: true)
         }
     }
 }

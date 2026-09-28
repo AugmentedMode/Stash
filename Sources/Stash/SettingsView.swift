@@ -7,7 +7,7 @@ struct WelcomeView: View {
     var body: some View {
         VStack(spacing: 18) {
             Spacer()
-            ClipStackIllustration().frame(height: 112)
+            CategoryIllustration().frame(height: 120)
             Text("A little space for\neverything you copy.").font(.system(size: 31, weight: .medium)).tracking(-1.4).multilineTextAlignment(.center)
             Text("Copy freely. Find it instantly. Keep your flow.").font(.system(size: 16)).foregroundStyle(Color.muted)
             HStack(spacing: 27) { Label("Local history", systemImage: "lock.shield"); Label("No account", systemImage: "person.crop.circle.badge.checkmark"); Label("No tracking", systemImage: "eye.slash") }.font(.system(size: 12)).foregroundStyle(Color.muted).padding(.top, 4)

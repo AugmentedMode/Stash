@@ -66,3 +66,9 @@ Branch: `design/glass-and-motion`.
 - Reduce Motion disables the new animations; Reduce Transparency uses an opaque charcoal surface.
 
 Validation: debug QA bundle builds and signs; all 26 existing core checks pass. Native sample-data checks cover category selection, search filtering, preview/back, pinning, and the illustrated empty state. Exact animation timing, Reduce Motion/Transparency with live system settings, and onboarding still need human visual acceptance. The QA bundle uses sample clips without monitoring or saving clipboard history.
+
+## Category artwork — build 7
+
+The glass and motion design now ships with a family of 11 category-specific vector illustrations. SVG masters and a contact sheet live in `Assets/CategoryArt`; matching native PDF assets are packaged inside the application. Empty states choose category artwork, with distinct All, Pinned, and Search variants. Generic row icons use compact art while service icons, file icons, color swatches, and actual image thumbnails retain priority. Onboarding uses the All illustration. Artwork settles once on appearance and respects Reduce Motion.
+
+Validation: debug and release bundles build and sign, all 26 core checks pass, and all 11 bundled vectors render with AppKit. Build 7 includes the resources in the standalone app so installation does not depend on the source checkout.
