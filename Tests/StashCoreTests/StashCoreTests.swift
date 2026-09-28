@@ -11,6 +11,33 @@ import AppKit
 import StashCore
 
 final class StashCoreTests {
+    func testSearchHighlightsUnicode() {
+        let text = "Café CAFÉ 👩🏽‍💻 design design"
+        let matches = SearchHighlight.ranges(in: text, query: "cafe design")
+        XCTAssertEqual(matches.map { String(text[$0]) }, ["Café", "CAFÉ", "design", "design"])
+        XCTAssertTrue(SearchHighlight.ranges(in: text, query: "   ").isEmpty)
+        XCTAssertTrue(SearchHighlight.ranges(in: text, query: "missing").isEmpty)
+    }
+    func testRenamePreservesPayloadAndLegacyHistory() throws {
+        let original = Clip(sourceName: "Notes", kind: .text, text: "Original payload")
+        var object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(original)) as! [String: Any]
+        object.removeValue(forKey: "customTitle")
+        let legacy = try JSONDecoder().decode(Clip.self, from: JSONSerialization.data(withJSONObject: object))
+        XCTAssertNil(legacy.customTitle)
+        var renamed = legacy
+        renamed.customTitle = "Reusable reply"
+        let decoded = try JSONDecoder().decode(Clip.self, from: JSONEncoder().encode(renamed))
+        XCTAssertEqual(decoded.displayTitle, "Reusable reply")
+        XCTAssertTrue(decoded.matches("reusable"))
+        XCTAssertTrue(decoded.matches("original"))
+        XCTAssertEqual(decoded.fingerprint, original.fingerprint)
+        let pasteboard = board(); defer { pasteboard.releaseGlobally() }
+        XCTAssertTrue(ClipboardCodec.restore(decoded, to: pasteboard))
+        XCTAssertEqual(pasteboard.string(forType: .string), "Original payload")
+        var history = History(clips: [decoded]); history.insert(original)
+        XCTAssertEqual(history.clips.count, 1)
+        XCTAssertEqual(history.clips.first?.customTitle, "Reusable reply")
+    }
     func screenshotData() -> Data {
         let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 12, pixelsHigh: 8, bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
         memset(bitmap.bitmapData!, 128, bitmap.bytesPerRow * bitmap.pixelsHigh)
@@ -276,6 +303,81 @@ final class StashCoreTests {
         XCTAssertEqual(LinkPresentation("https://docs.google.com/spreadsheets/d/opaque/edit")?.service, .sheets)
         XCTAssertEqual(LinkPresentation("https://docs.google.com/presentation/d/opaque/edit")?.service, .slides)
     }
+    func testAIRecognition() {
+        let services: [(String, LinkPresentation.Service, String)] = [
+            ("chatgpt.com", .chatgpt, "ChatGPT"), ("chat.openai.com", .chatgpt, "ChatGPT"),
+            ("claude.ai", .claude, "Claude"), ("gemini.google.com", .gemini, "Gemini"),
+            ("perplexity.ai", .perplexity, "Perplexity")
+        ]
+        for (host, service, name) in services {
+            let original = "https://\(host)/share/opaque?source=copy#answer"
+            XCTAssertEqual(LinkPresentation(original)?.service, service)
+            XCTAssertEqual(LinkPresentation(original)?.label, name)
+            XCTAssertTrue(clip(original).matches(name))
+            XCTAssertEqual(clip(original).text, original)
+            XCTAssertEqual(LinkPresentation("https://\(host).evil.example/share")?.service, .web)
+            XCTAssertEqual(LinkPresentation("https://\(host)@evil.example/share")?.service, .web)
+        }
+        XCTAssertEqual(LinkPresentation("https://www.perplexity.ai/search/example")?.service, .perplexity)
+        XCTAssertEqual(Clip(sourceName: "Claude", sourceBundle: "com.anthropic.claudefordesktop", kind: .text, text: "An answer").aiSourceService, .claude)
+        XCTAssertEqual(Clip(sourceName: "ChatGPT", sourceBundle: "com.openai.chat", kind: .text, text: "An answer").aiSourceService, .chatgpt)
+        XCTAssertNil(Clip(sourceName: "Chrome", sourceBundle: "com.google.Chrome", kind: .text, text: "ChatGPT says hello").aiSourceService)
+        XCTAssertNil(Clip(sourceName: "Claude", sourceBundle: "com.anthropic.claudefordesktop", kind: .link, text: "https://example.com").aiSourceService)
+    }
+    func testExpandedServiceRecognition() {
+        let cases: [(String, LinkPresentation.Service)] = [
+            ("https://team.slack.com/archives/C1/p123", .slack),
+            ("https://linear.app/team/issue/ABC-1", .linear),
+            ("https://team.atlassian.net/browse/ABC-1", .jira),
+            ("https://team.atlassian.net/jira/software/projects/ABC", .jira),
+            ("https://jira.com", .jira), ("https://drive.google.com/file/d/123/view", .drive),
+            ("https://www.dropbox.com/scl/fi/123/file", .dropbox),
+            ("https://onedrive.live.com/?id=123", .onedrive), ("https://1drv.ms/u/s!123", .onedrive),
+            ("https://youtube.com/watch?v=123", .youtube), ("https://youtu.be/123", .youtube),
+            ("https://m.youtube.com/watch?v=123", .youtube), ("https://www.loom.com/share/123", .loom),
+            ("https://company.zoom.us/j/123", .zoom), ("https://zoom.com/j/123", .zoom),
+            ("https://meet.google.com/abc-defg-hij", .meet),
+            ("https://teams.microsoft.com/l/meetup-join/123", .teams),
+            ("https://teams.live.com/meet/123", .teams), ("https://teams.cloud.microsoft/meet/123", .teams),
+            ("https://cursor.com/agents/123", .cursor), ("https://cursor.sh", .cursor),
+            ("https://chatgpt.com/codex/tasks/123", .codex),
+            ("https://copilot.microsoft.com/chats/123", .copilot),
+            ("https://github.com/copilot", .copilot), ("https://copilot.github.com", .copilot),
+            ("https://grok.com/share/123", .grok)
+        ]
+        for (original, service) in cases {
+            XCTAssertEqual(LinkPresentation(original)?.service, service)
+            XCTAssertTrue(clip(original).matches(service.name))
+            let url = URL(string: original)!
+            let host = url.host!
+            XCTAssertEqual(LinkPresentation("https://\(host).evil.example\(url.path)")?.service, .web)
+            XCTAssertEqual(LinkPresentation("https://\(host)@evil.example\(url.path)")?.service, .web)
+        }
+        XCTAssertEqual(LinkPresentation("https://team.atlassian.net/wiki/spaces/ABC")?.service, .web)
+        XCTAssertEqual(LinkPresentation("https://chatgpt.com/codexish")?.service, .chatgpt)
+        XCTAssertEqual(LinkPresentation("https://github.com/copilot-example/repo")?.service, .github)
+        XCTAssertEqual(Clip(sourceName: "Codex", sourceBundle: "com.openai.codex", kind: .text, text: "hello").aiSourceService, .codex)
+        XCTAssertEqual(Clip(sourceName: "Cursor", sourceBundle: "com.todesktop.230313mzl4w4u92", kind: .text, text: "hello").aiSourceService, .cursor)
+    }
+    func testTextIconDetection() {
+        XCTAssertEqual(TextClipStyle.detect("{\"name\": \"Stash\", \"items\": [1, 2]}"), .json)
+        XCTAssertEqual(TextClipStyle.detect(" [1, true, null] "), .json)
+        XCTAssertEqual(TextClipStyle.detect("```swift\nlet value = 1\n```"), .code)
+        XCTAssertEqual(TextClipStyle.detect("```bash\ngit status\n```"), .command)
+        XCTAssertEqual(TextClipStyle.detect("$ git status"), .command)
+        XCTAssertEqual(TextClipStyle.detect("% npm install"), .command)
+        XCTAssertEqual(TextClipStyle.detect("#!/bin/sh\necho hello"), .command)
+        for value in ["hello", "{not json}", "[todo]", "42", "$ 100 due", "git is useful", "```\nA quote\n```", "```swift\nMissing fence", "$ git status\nSome prose"] {
+            XCTAssertNil(TextClipStyle.detect(value))
+        }
+        XCTAssertNil(TextClipStyle.detect(String(repeating: " ", count: 65_537) + "{}"))
+        let original = "{\"key\": 1}"
+        let item = clip(original)
+        XCTAssertEqual(item.kind, .text)
+        XCTAssertEqual(item.textStyle, .json)
+        XCTAssertEqual(item.text, original)
+        XCTAssertNil(clip("https://example.com").textStyle)
+    }
     func testLinkDomainBoundaries() {
         XCTAssertEqual(LinkPresentation("https://notion.so.evil.example/Notes")?.service, .web)
         XCTAssertEqual(LinkPresentation("https://notion.so@evil.example/Notes")?.service, .web)
@@ -332,6 +434,8 @@ final class StashCoreTests {
    ("PausedAndExcludedCopiesDoNotReappear", suite.testPausedAndExcludedCopiesDoNotReappear),
    ("RestoringClipDoesNotRecaptureIt", suite.testRestoringClipDoesNotRecaptureIt),
    ("Classification", suite.testClassification),
+   ("SearchHighlightsUnicode", suite.testSearchHighlightsUnicode),
+   ("RenamePreservesPayloadAndLegacyHistory", suite.testRenamePreservesPayloadAndLegacyHistory),
    ("RichTextRoundTrip", suite.testRichTextRoundTrip),
    ("SensitiveMarkersNeverCaptured", suite.testSensitiveMarkersNeverCaptured),
    ("ExcludedAppNotCaptured", suite.testExcludedAppNotCaptured),
@@ -342,6 +446,9 @@ final class StashCoreTests {
    ("RetentionAndLimitPreservePinnedItems", suite.testRetentionAndLimitPreservePinnedItems),
    ("SearchAndFilters", suite.testSearchAndFilters),
    ("LinkRecognition", suite.testLinkRecognition),
+   ("AIRecognition", suite.testAIRecognition),
+   ("ExpandedServiceRecognition", suite.testExpandedServiceRecognition),
+   ("TextIconDetection", suite.testTextIconDetection),
    ("LinkDomainBoundaries", suite.testLinkDomainBoundaries),
    ("LinkSearchAndOriginalPayload", suite.testLinkSearchAndOriginalPayload),
    ("DiskRoundTripAndPermissions", suite.testDiskRoundTripAndPermissions),

@@ -12,7 +12,10 @@ Open `dist/Stash.app` and click **Start collecting**. Stash lives in your menu b
 - **←/→** switches categories when search is empty; **⌥←/⌥→** works while searching.
 - **⌘Y** opens the selected clip’s preview inside the palette.
 - **⌘P** pins the selected clip; **⌘Delete** deletes it. **⌘Z** undoes a deletion while Undo is visible.
-- **⇧Return** pastes as plain text.
+- **⌘K** opens searchable actions for the selected clip, including **Paste without formatting** for text clips. **⇧Return** is its direct shortcut.
+- Images and Screenshots offer a thumbnail grid; **↑/↓** selects clips and **←/→** continues switching categories. Click a thumbnail to select; double-click or press Space to expand.
+- Expanded images start fitted to the viewport. Click the image or **Zoom in** to enlarge, scroll to explore, and choose **Fit** to see the whole image.
+- **Rename in Stash** changes only the label, preserving the original clipboard contents.
 - **⌘F** focuses search; **⌘,** opens Settings; **Esc** closes the panel.
 - Click a row once to paste; use its context menu to copy without switching apps.
 - Escape closes a preview first, then clears search, then dismisses the palette.

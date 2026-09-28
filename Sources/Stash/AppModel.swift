@@ -16,6 +16,16 @@ final class AppModel: ObservableObject {
     var screenshotSettingsRequested = false
     @Published var settingsOpen = false
     @Published var previewOpen = false
+    @Published var imageGrid: Bool { didSet { defaults.set(imageGrid, forKey: "imageGrid") } }
+    @Published var searchHasFocus = true
+    @Published var actionClipID: UUID?
+    @Published var actionQuery = ""
+    @Published var actionIndex = 0
+    @Published var renameClipID: UUID?
+    @Published var renameDraft = ""
+    var supportsGrid: Bool { category == .image || category == .screenshot }
+    var gridActive: Bool { supportsGrid && imageGrid && !previewOpen }
+
     @Published var canUndoDelete = false
     private var deletedClip: Clip?
     @Published var toast: String?
@@ -91,6 +101,7 @@ final class AppModel: ObservableObject {
         self.demo = demo
         defaults = demo ? UserDefaults(suiteName: "app.stash.preview")! : .standard
         diskURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Stash/history.json")
+        imageGrid = defaults.object(forKey: "imageGrid") as? Bool ?? true
         started = demo || defaults.bool(forKey: "started")
         retention = defaults.object(forKey: "retention") as? Int ?? 30
         memoryOnly = defaults.bool(forKey: "memoryOnly")
@@ -177,7 +188,7 @@ final class AppModel: ObservableObject {
         for observer in workspaceObservers { NSWorkspace.shared.notificationCenter.removeObserver(observer) }
         writer.flush()
     }
-    func selectFilter(_ kind: ClipKind?, pinned: Bool = false) { previewOpen = false; category = kind; pinnedOnly = pinned; selection = results.first?.id }
+    func selectFilter(_ kind: ClipKind?, pinned: Bool = false) { closeActions(); previewOpen = false; category = kind; pinnedOnly = pinned; selection = results.first?.id }
     func reconcileSelection() { if !results.contains(where: { $0.id == selection }) { selection = results.first?.id } }
     func move(_ offset: Int) { let list = results; guard !list.isEmpty else { return }; let index = list.firstIndex { $0.id == selected?.id } ?? 0; selection = list[max(0, min(list.count - 1, index + offset))].id }
     func togglePin(_ clip: Clip) { guard let i = history.clips.firstIndex(where: { $0.id == clip.id }) else { return }; history.clips[i].pinned.toggle(); let pinned = history.clips[i].pinned; reconcileSelection(); save(); message(pinned ? "Pinned to your collection" : "Unpinned") }
@@ -236,6 +247,8 @@ final class AppModel: ObservableObject {
             (.link, "https://github.com/swiftlang/swift/pull/123", "Safari", false, -90000),
             (.text, "Make room for the next good thing.", "Notes", false, -95000)
         ]
-        return History(clips: seeds.map { Clip(createdAt: now.addingTimeInterval($0.4), sourceName: $0.2, kind: $0.0, text: $0.1, pinned: $0.3) })
+        let bundles = ["Notes": "com.apple.Notes", "Figma": "com.figma.Desktop", "Slack": "com.tinyspeck.slackmacgap", "Mail": "com.apple.mail", "Xcode": "com.apple.dt.Xcode", "Safari": "com.apple.Safari"]
+        let clips = seeds.map { Clip(createdAt: now.addingTimeInterval($0.4), sourceName: $0.2, sourceBundle: bundles[$0.2] ?? "", kind: $0.0, text: $0.1, pinned: $0.3) }
+        return History(clips: clips + demoImages(now: now))
     }
 }

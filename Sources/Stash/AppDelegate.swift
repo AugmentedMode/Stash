@@ -122,6 +122,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let animateEntrance = !panel.isVisible
         presentationPending = true
         if let front = NSWorkspace.shared.frontmostApplication, front.processIdentifier != ProcessInfo.processInfo.processIdentifier { previousApp = front }
+        model.closeActions(); model.renameClipID = nil
         model.previewOpen = false; model.query = ""; model.selectFilter(nil)
         model.destinationName = previousApp?.localizedName ?? "previous app"
         model.quickPasteReady = AXIsProcessTrusted()
@@ -211,6 +212,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func handle(_ event: NSEvent) -> NSEvent? {
         guard panel.isKeyWindow, !model.settingsOpen, model.started else { return event }
         let cmd = event.modifierFlags.contains(.command)
+        if model.renameClipID != nil {
+            if event.keyCode == 53 { model.renameClipID = nil; return nil }
+            if event.keyCode == 36 { model.finishRename(); return nil }
+            return event
+        }
+        if model.actionClipID != nil {
+            if event.keyCode == 53 || (cmd && event.charactersIgnoringModifiers == "k") { model.closeActions(); return nil }
+            if event.keyCode == 125 { model.actionIndex = min(max(0, model.filteredActions.count - 1), model.actionIndex + 1); return nil }
+            if event.keyCode == 126 { model.actionIndex = max(0, model.actionIndex - 1); return nil }
+            if event.keyCode == 36 {
+                if let clip = model.actionClip, model.filteredActions.indices.contains(model.actionIndex) {
+                    model.perform(model.filteredActions[model.actionIndex], on: clip)
+                }
+                return nil
+            }
+            return event
+        }
+        if cmd, event.charactersIgnoringModifiers == "k" { model.openActions(); return nil }
         if event.keyCode == 53 {
             if model.previewOpen { model.previewOpen = false }
             else if !model.query.isEmpty { model.query = "" }
@@ -219,7 +238,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
         if cmd, event.charactersIgnoringModifiers == "y", model.selected != nil { model.previewOpen.toggle(); return nil }
         if cmd, event.charactersIgnoringModifiers == "z", model.canUndoDelete { model.undoDelete(); return nil }
-        if (event.keyCode == 49 || event.charactersIgnoringModifiers == " "), model.query.isEmpty, !cmd, model.selected != nil { model.previewOpen.toggle(); return nil }
+        if (event.keyCode == 49 || event.charactersIgnoringModifiers == " "), (model.query.isEmpty || !model.searchHasFocus), !cmd, model.selected != nil { model.previewOpen.toggle(); return nil }
         if [123, 124].contains(event.keyCode), !cmd, model.query.isEmpty || event.modifierFlags.contains(.option) {
             model.cycleFilter(event.keyCode == 123 ? -1 : 1); return nil
         }

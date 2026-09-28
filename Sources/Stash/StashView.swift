@@ -35,20 +35,47 @@ struct StashView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Namespace private var categoryPill
-    var body: some View {
+    @Namespace private var imageNamespace
+    private var surface: some View {
         Group {
             if model.started { palette } else { WelcomeView(model: model) }
         }
+        .allowsHitTesting(model.actionClipID == nil && model.renameClipID == nil)
+        .accessibilityHidden(model.actionClipID != nil || model.renameClipID != nil)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay {
+            if model.actionClipID != nil || model.renameClipID != nil {
+                ZStack {
+                    Color.black.opacity(0.25).contentShape(Rectangle()).onTapGesture {
+                        model.closeActions(); model.renameClipID = nil
+                    }.accessibilityHidden(true)
+                    if model.renameClipID != nil { RenameClipView(model: model).frame(maxWidth: 380).padding(20) }
+                    else { ActionPalette(model: model).frame(maxWidth: 380).padding(20) }
+                }
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .background(Color(red: 0.035, green: 0.04, blue: 0.065).opacity(reduceTransparency ? 1 : 0.52), in: RoundedRectangle(cornerRadius: 24))
         .overlay(RoundedRectangle(cornerRadius: 24).strokeBorder(LinearGradient(colors: [.white.opacity(0.16), .white.opacity(0.03), .white.opacity(0.08)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 0.7))
         .tint(.accent)
-        .sheet(isPresented: $model.settingsOpen, onDismiss: { model.quickPasteReady = AXIsProcessTrusted() }) { SettingsView(model: model) }
-        .onReceive(NotificationCenter.default.publisher(for: .init("StashFocusSearch"))) { _ in searchFocused = true }
-        .onAppear { searchFocused = true }
-        .onChange(of: model.query) { _, _ in model.previewOpen = false; model.selection = model.results.first?.id }
-        .onChange(of: model.previewOpen) { _, open in if !open { searchFocused = true } }
+
+    }
+    private var focusedSurface: some View {
+        surface
+            .sheet(isPresented: $model.settingsOpen, onDismiss: { model.quickPasteReady = AXIsProcessTrusted() }) { SettingsView(model: model) }
+            .onReceive(NotificationCenter.default.publisher(for: .init("StashFocusSearch"))) { _ in searchFocused = true }
+            .onReceive(NotificationCenter.default.publisher(for: .init("StashFocusResults"))) { _ in searchFocused = false }
+            .onChange(of: searchFocused) { _, focused in model.searchHasFocus = focused }
+            .onAppear { searchFocused = true }
+    }
+    var body: some View {
+        focusedSurface
+            .onChange(of: model.actionClipID) { _, id in
+                if id == nil && model.renameClipID == nil { searchFocused = true }
+            }
+            .onChange(of: model.renameClipID) { _, id in if id == nil { searchFocused = true } }
+            .onChange(of: model.query) { _, _ in model.previewOpen = false; model.selection = model.results.first?.id }
+            .onChange(of: model.previewOpen) { _, open in if !open { searchFocused = true } }
     }
     var palette: some View {
         VStack(spacing: 0) {
@@ -62,9 +89,11 @@ struct StashView: View {
                             Spacer()
                             Button { model.previewOpen = false } label: { Label("Back", systemImage: "arrow.left") }.buttonStyle(.plain).font(.system(size: 12)).accessibilityLabel("Close preview")
                         }.padding(.horizontal, 22).padding(.top, 16)
-                        DetailView(model: model, clip: clip).id(clip.id)
+                        DetailView(model: model, clip: clip, imageNamespace: imageNamespace).id(clip.id)
                     }.frame(maxHeight: .infinity)
-                        .transition(.opacity.combined(with: .offset(x: reduceMotion ? 0 : 8)))
+                        .transition(.opacity.combined(with: .offset(x: reduceMotion || model.selected?.isVisual == true ? 0 : 8)))
+                } else if model.gridActive && !model.results.isEmpty {
+                    ImageBrowser(model: model, imageNamespace: imageNamespace).transition(.opacity)
                 } else {
                     clipList.transition(.opacity.combined(with: .offset(x: reduceMotion ? 0 : -8)))
                 }
@@ -83,7 +112,17 @@ struct StashView: View {
                 if !model.query.isEmpty {
                     Button { model.query = "" } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(Color.muted) }.buttonStyle(.plain).accessibilityLabel("Clear search")
                 }
-                Text("\(model.results.count) \(model.results.count == 1 ? "clip" : "clips")").font(.system(size: 11)).foregroundStyle(Color.muted).fixedSize()
+                Text(model.demo ? "Sample data" : "\(model.results.count) \(model.results.count == 1 ? "clip" : "clips")").font(.system(size: 11)).foregroundStyle(Color.muted).fixedSize()
+                if model.supportsGrid {
+                    Button { model.imageGrid.toggle(); model.previewOpen = false } label: {
+                        Image(systemName: model.imageGrid ? "list.bullet" : "square.grid.2x2")
+                    }.buttonStyle(.plain).foregroundStyle(Color.accent)
+                        .help(model.imageGrid ? "Switch to list" : "Switch to thumbnail grid")
+                        .accessibilityLabel(model.imageGrid ? "Switch to list" : "Switch to thumbnail grid")
+                }
+                Button { model.openActions() } label: { Image(systemName: "ellipsis.circle") }
+                    .buttonStyle(.plain).foregroundStyle(Color.muted).disabled(model.selected == nil)
+                    .help("Clip actions · ⌘K").accessibilityLabel("Clip actions")
                 Button { model.previewOpen.toggle() } label: {
                     Image(systemName: model.previewOpen ? "eye.slash" : "eye").font(.system(size: 14))
                 }.buttonStyle(.plain).foregroundStyle(Color.muted).disabled(model.selected == nil)
@@ -175,18 +214,8 @@ struct StashView: View {
                                         Spacer()
                                     }.foregroundStyle(Color.muted).padding(.horizontal, 16).padding(.top, index == 0 ? 4 : 14).padding(.bottom, 6)
                                 }
-                                PaletteRow(clip: clip, index: index, selected: model.selected?.id == clip.id, onSelect: { model.selection = clip.id }, onPaste: { model.paste(clip) })
-                                    .contextMenu {
-                                        Button("Paste", systemImage: "doc.on.clipboard") { model.paste(clip) }
-                                        if clip.linkPresentation != nil, let url = URL(string: clip.text.trimmingCharacters(in: .whitespacesAndNewlines)) {
-                                            Button("Open original link", systemImage: "arrow.up.right") { NSWorkspace.shared.open(url) }
-                                        }
-                                        Button("Copy", systemImage: "doc.on.doc") { model.copy(clip) }
-                                        Button("Preview", systemImage: "eye") { model.selection = clip.id; model.previewOpen = true }
-                                        Button(clip.pinned ? "Unpin" : "Pin", systemImage: "pin") { model.togglePin(clip) }
-                                        Divider()
-                                        Button("Delete clip", systemImage: "trash", role: .destructive) { model.remove(clip) }
-                                    }
+                                PaletteRow(clip: clip, index: index, query: model.query, imageNamespace: imageNamespace, selected: model.selected?.id == clip.id, onSelect: { model.selection = clip.id }, onPaste: { model.paste(clip) })
+                                    .contextMenu { ClipActionButtons(model: model, clip: clip) }
                                 }.id(clip.id)
                             }
                         }.padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 12)
@@ -272,8 +301,8 @@ struct StashView: View {
                         hint("⌘P", model.selected?.pinned == true ? "Unpin" : "Pin")
                     }
                 }.disabled(model.selected == nil).accessibilityLabel("Pin or unpin selected clip")
-                Button { if let clip = model.selected { model.remove(clip) } } label: { hint("⌘⌫", "Delete") }
-                    .disabled(model.selected == nil).help("Delete selected clip. Undo with ⌘Z.").accessibilityLabel("Delete selected clip")
+                Button { model.openActions() } label: { hint("⌘K", "Actions") }
+                    .disabled(model.selected == nil).help("Actions for the selected clip · ⌘K").accessibilityLabel("Open clip actions")
                 Spacer(minLength: 0)
                 Button { model.hidePanel?() } label: { hint("esc", "Close") }
             }.buttonStyle(.plain).padding(.horizontal, 20).padding(.vertical, 14)
@@ -291,6 +320,8 @@ struct StashView: View {
 struct PaletteRow: View {
     let clip: Clip
     let index: Int
+    let query: String
+    let imageNamespace: Namespace.ID
     let selected: Bool
     var onSelect: () -> Void
     var onPaste: () -> Void
@@ -299,9 +330,14 @@ struct PaletteRow: View {
         HStack(spacing: 13) {
             thumbnail.frame(width: 30, height: 30)
             VStack(alignment: .leading, spacing: 4) {
-                Text(clip.displayTitle).font(.system(size: 14, weight: .medium)).foregroundStyle(.white.opacity(selected ? 1 : 0.9)).lineLimit(1)
+                HighlightedText(value: clip.displayTitle, query: query).font(.system(size: 14, weight: .medium)).foregroundStyle(.white.opacity(selected ? 1 : 0.9)).lineLimit(1)
                 HStack(spacing: 5) {
-                    Text(clip.linkPresentation.map { $0.service == .web ? $0.host : $0.label + " · " + $0.host } ?? clip.sourceName)
+                    SourceAppIcon(clip: clip)
+                    HighlightedText(value: clip.sourceName, query: query)
+                    if let link = clip.linkPresentation {
+                        Text("·")
+                        HighlightedText(value: link.host, query: query)
+                    }
                     Text("·").opacity(0.7)
                     Text(clip.createdAt.formatted(date: .omitted, time: .shortened))
                     PinGlyph(pinned: clip.pinned).font(.system(size: 9)).opacity(clip.pinned ? 1 : 0).padding(.leading, 2)
@@ -328,14 +364,25 @@ struct PaletteRow: View {
     @ViewBuilder var thumbnail: some View {
         if let link = clip.linkPresentation {
             LinkIcon(service: link.service)
+        } else if let service = clip.aiSourceService {
+            LinkIcon(service: service)
         } else if clip.kind == .color {
             RoundedRectangle(cornerRadius: 8).fill(Color.hex(clip.text)).padding(2).overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.white.opacity(0.10)).padding(2))
-        } else if (clip.kind == .image || clip.kind == .screenshot), let image = clip.image {
-            Image(nsImage: image).resizable().scaledToFill().frame(width: 30, height: 30).clipShape(RoundedRectangle(cornerRadius: 6))
+        } else if clip.isVisual {
+            ClipImage(clip: clip).frame(width: 30, height: 30).clipShape(RoundedRectangle(cornerRadius: 6))
+                .matchedGeometryEffect(id: clip.id, in: imageNamespace)
+                .overlay(alignment: .bottomTrailing) {
+                    if clip.kind == .screenshot { ThumbnailBadge(symbol: "viewfinder") }
+                }
         } else if let file = clip.fileURLs.first {
             Image(nsImage: NSWorkspace.shared.icon(forFile: file.path)).resizable().scaledToFit()
+                .padding(1)
+                .overlay(alignment: .bottomTrailing) {
+                    if clip.fileURLs.count > 1 { ThumbnailBadge(count: clip.fileURLs.count) }
+                    else if clip.kind == .video { ThumbnailBadge(symbol: "play.fill") }
+                }
         } else {
-            CategoryIllustration(artwork: CategoryArtwork(rawValue: clip.kind.rawValue) ?? .all, compact: true)
+            ClipTypeIcon(kind: clip.kind, textStyle: clip.textStyle)
         }
     }
 }
@@ -343,10 +390,19 @@ struct PaletteRow: View {
 struct DetailView: View {
     @ObservedObject var model: AppModel
     let clip: Clip
+    let imageNamespace: Namespace.ID
     var body: some View {
+        if clip.isVisual {
+            ImageDetailView(model: model, clip: clip, imageNamespace: imageNamespace)
+        } else {
+            standardDetail
+        }
+    }
+    private var standardDetail: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack { Label(clip.kind.title.uppercased(), systemImage: clip.kind.symbol).font(.system(size: 10, weight: .medium)).tracking(1.1).foregroundStyle(Color.muted); Spacer(); Button { model.togglePin(clip) } label: { PinGlyph(pinned: clip.pinned) }.buttonStyle(.plain).help(clip.pinned ? "Unpin (⌘P)" : "Pin (⌘P)").accessibilityLabel(clip.pinned ? "Unpin clip" : "Pin clip")
-                Menu { Button("Copy") { model.copy(clip) }; Button("Copy as plain text") { model.copy(clip, plain: true) }; Divider(); Button("Delete clip", role: .destructive) { model.remove(clip) } } label: { Image(systemName: "ellipsis").foregroundStyle(Color.muted) }.menuStyle(.borderlessButton).fixedSize().accessibilityLabel("Clip actions")
+                Button { model.openActions(for: clip) } label: { Image(systemName: "ellipsis.circle").foregroundStyle(Color.muted) }
+                    .buttonStyle(.plain).help("Actions · ⌘K").accessibilityLabel("Clip actions")
             }.padding(.bottom, 23)
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
@@ -367,9 +423,6 @@ struct DetailView: View {
                     } else if clip.kind == .color {
                         RoundedRectangle(cornerRadius: 14).fill(Color.hex(clip.text)).frame(height: 165).overlay(alignment: .bottomLeading) { Text(clip.text.uppercased()).font(.system(size: 22, weight: .medium, design: .monospaced)).foregroundStyle(.black.opacity(0.65)).padding(18) }
                         Text("A color worth keeping.").font(.system(size: 18, weight: .medium)).tracking(-0.3)
-                    } else if (clip.kind == .image || clip.kind == .screenshot), let image = clip.image {
-                        Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 260).clipShape(RoundedRectangle(cornerRadius: 12))
-                        Text("\(Int(image.size.width)) × \(Int(image.size.height)) pixels").font(.system(size: 12)).foregroundStyle(Color.muted)
                     } else if clip.kind == .file || clip.kind == .video {
                         ForEach(clip.fileURLs, id: \.absoluteString) { url in HStack(spacing: 10) { Image(nsImage: NSWorkspace.shared.icon(forFile: url.path)).resizable().frame(width: 40, height: 40); VStack(alignment: .leading, spacing: 5) { Text(url.lastPathComponent).font(.system(size: 14, weight: .medium)); Text(url.deletingLastPathComponent().path).font(.system(size: 11)).foregroundStyle(Color.muted).lineLimit(2) } } }
                     } else {
@@ -379,7 +432,12 @@ struct DetailView: View {
             }
             Spacer(minLength: 20)
             VStack(spacing: 10) {
-                meta("Copied from", clip.sourceName)
+                HStack {
+                    Text("Copied from").foregroundStyle(Color.muted)
+                    Spacer()
+                    SourceAppIcon(clip: clip)
+                    Text(clip.sourceName).foregroundStyle(Color.muted)
+                }.font(.system(size: 11))
                 meta("Added", clip.createdAt.formatted(date: .abbreviated, time: .shortened))
                 meta("Content", clip.kind == .image || clip.kind == .screenshot || clip.kind == .file || clip.kind == .video ? ByteCountFormatter.string(fromByteCount: Int64(clip.byteCount), countStyle: .file) : "\(clip.text.count) characters")
             }.padding(.vertical, 18).overlay(alignment: .top) { Rectangle().fill(Color.line).frame(height: 1) }
@@ -387,47 +445,4 @@ struct DetailView: View {
         }.padding(23).background(Color.white.opacity(0.008))
     }
     func meta(_ label: String, _ value: String) -> some View { HStack { Text(label).foregroundStyle(Color.muted); Spacer(); Text(value).foregroundStyle(Color.white.opacity(0.72)).lineLimit(1) }.font(.system(size: 11)) }
-}
-
-/// Installed app icons are resolved once, without fetching any web resources.
-struct LinkIcon: View {
-    let service: LinkPresentation.Service
-    private static let localIcons: [LinkPresentation.Service: NSImage] = {
-        var result: [LinkPresentation.Service: NSImage] = [:]
-        for (service, bundle) in [(LinkPresentation.Service.notion, "notion.id"), (.figma, "com.figma.Desktop"), (.github, "com.github.GitHubClient")] {
-            if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundle) { result[service] = NSWorkspace.shared.icon(forFile: url.path) }
-        }
-        return result
-    }()
-    var body: some View {
-        Group {
-            if let icon = Self.localIcons[service] {
-                Image(nsImage: icon).resizable().scaledToFit()
-            } else if service == .notion {
-                Text("N").font(.system(size: 23, weight: .bold, design: .serif)).foregroundStyle(.black)
-                    .frame(width: 28, height: 28).background(.white, in: RoundedRectangle(cornerRadius: 6))
-            } else {
-                Image(systemName: symbol).font(.system(size: 21, weight: .regular)).foregroundStyle(tint)
-            }
-        }.accessibilityHidden(true)
-    }
-    private var symbol: String {
-        switch service {
-        case .docs: return "doc.text.fill"
-        case .sheets: return "tablecells.fill"
-        case .slides: return "rectangle.on.rectangle"
-        case .github: return "chevron.left.forwardslash.chevron.right"
-        case .figma: return "square.stack.3d.up.fill"
-        default: return "globe"
-        }
-    }
-    private var tint: Color {
-        switch service {
-        case .docs: return Color(red: 0.45, green: 0.68, blue: 1)
-        case .sheets: return Color(red: 0.40, green: 0.80, blue: 0.58)
-        case .slides: return Color(red: 1, green: 0.77, blue: 0.38)
-        case .figma: return Color.accent
-        default: return Color.white.opacity(0.7)
-        }
-    }
 }

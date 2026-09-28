@@ -22,11 +22,13 @@ public struct Clip: Codable, Identifiable, Equatable {
     public var sourceBundle: String
     public let kind: ClipKind
     public let text: String
+    public var customTitle: String?
     public var pinned: Bool
     public let items: [[String: Data]]
     public let fingerprint: String
-    public init(id: UUID = UUID(), createdAt: Date = Date(), sourceName: String, sourceBundle: String = "", kind: ClipKind, text: String, pinned: Bool = false, items: [[String: Data]] = []) {
+    public init(id: UUID = UUID(), createdAt: Date = Date(), sourceName: String, sourceBundle: String = "", kind: ClipKind, text: String, pinned: Bool = false, items: [[String: Data]] = [], customTitle: String? = nil) {
         self.id = id; self.createdAt = createdAt; self.sourceName = sourceName; self.sourceBundle = sourceBundle; self.kind = kind; self.text = text; self.pinned = pinned; self.items = items
+        self.customTitle = customTitle
         self.fingerprint = Self.makeFingerprint(kind: kind, text: text, items: items)
     }
     public var title: String { text.split(whereSeparator: \.isNewline).first.map(String.init) ?? kind.title }
@@ -43,7 +45,7 @@ public struct Clip: Codable, Identifiable, Equatable {
     public func matches(_ query: String) -> Bool {
         let terms = query.split(whereSeparator: \.isWhitespace)
         guard !terms.isEmpty else { return true }
-        let searchable = text + " " + sourceName + " " + kind.title + " " + (linkPresentation.map { $0.title + " " + $0.label } ?? "")
+        let searchable = (customTitle ?? "") + " " + text + " " + sourceName + " " + kind.title + " " + (linkPresentation.map { $0.title + " " + $0.label } ?? "")
         return terms.allSatisfy { searchable.localizedStandardContains(String($0)) }
     }
 }
@@ -120,7 +122,7 @@ public struct History: Codable {
                    return ScreenshotCapture.clip(data: other)?.fingerprint == normalized.fingerprint
                }) {
                 let existing = clips.remove(at: index)
-                let merged = Clip(id: existing.id, createdAt: max(existing.createdAt, clip.createdAt), sourceName: "Screenshot", sourceBundle: "com.apple.screencapture", kind: .screenshot, text: normalized.text, pinned: existing.pinned || clip.pinned, items: normalized.items)
+                let merged = Clip(id: existing.id, createdAt: max(existing.createdAt, clip.createdAt), sourceName: "Screenshot", sourceBundle: "com.apple.screencapture", kind: .screenshot, text: normalized.text, pinned: existing.pinned || clip.pinned, items: normalized.items, customTitle: existing.customTitle ?? clip.customTitle)
                 insert(merged, limit: limit)
                 return
             }
