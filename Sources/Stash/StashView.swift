@@ -146,7 +146,7 @@ struct StashView: View {
         Group {
             if model.results.isEmpty {
                 VStack(spacing: 12) {
-                    CategoryIllustration(artwork: emptyArtwork).id(emptyArtwork)
+                    CategoryIllustration(artwork: emptyArtwork, animateEntrance: false)
                         .padding(.bottom, 3)
                     Text(emptyTitle)
                         .font(.system(size: 17, weight: .medium))
@@ -191,12 +191,27 @@ struct StashView: View {
                             }
                         }.padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 12)
                     }
-                    .onChange(of: model.selection) { _, id in if let id { proxy.scrollTo(id) } }
-                    .onChange(of: model.category) { _, _ in if let first = model.results.first { proxy.scrollTo(first.id, anchor: .top) } }
-                    .onChange(of: model.query) { _, _ in if let first = model.results.first { proxy.scrollTo(first.id, anchor: .top) } }
+                    .onChange(of: listPosition) { previous, current in
+                        // A filter change also changes selection. Handle both in
+                        // one scroll request, after SwiftUI has updated the list.
+                        if previous.category != current.category || previous.pinned != current.pinned || previous.query != current.query {
+                            if let first = model.results.first { proxy.scrollTo(first.id, anchor: .top) }
+                        } else if let id = current.selection {
+                            proxy.scrollTo(id)
+                        }
+                    }
                 }
             }
         }.frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    private struct ListPosition: Equatable {
+        var category: ClipKind?
+        var pinned: Bool
+        var query: String
+        var selection: UUID?
+    }
+    private var listPosition: ListPosition {
+        ListPosition(category: model.category, pinned: model.pinnedOnly, query: model.query, selection: model.selection)
     }
     private var emptyArtwork: CategoryArtwork {
         if !model.query.isEmpty { return .search }

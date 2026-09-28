@@ -38,6 +38,7 @@ enum CategoryArtwork: String, CaseIterable {
 struct CategoryIllustration: View {
     var artwork: CategoryArtwork = .all
     var compact = false
+    var animateEntrance = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var settled = false
 
@@ -50,11 +51,11 @@ struct CategoryIllustration: View {
             }
         }
         .frame(width: compact ? 38 : 160, height: compact ? 30 : 120)
-        .scaleEffect(compact || settled ? 1 : 0.94)
-        .offset(y: compact || settled ? 0 : 5)
+        .scaleEffect(compact || !animateEntrance || settled ? 1 : 0.94)
+        .offset(y: compact || !animateEntrance || settled ? 0 : 5)
         .accessibilityHidden(true)
         .onAppear {
-            guard !settled else { return }
+            guard animateEntrance, !compact, !settled else { return }
             withAnimation(reduceMotion || compact ? nil : .spring(duration: 0.4, bounce: 0.15)) {
                 settled = true
             }

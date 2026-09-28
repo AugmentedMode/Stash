@@ -72,3 +72,9 @@ Validation: debug QA bundle builds and signs; all 26 existing core checks pass. 
 The glass and motion design now ships with a family of 11 category-specific vector illustrations. SVG masters and a contact sheet live in `Assets/CategoryArt`; matching native PDF assets are packaged inside the application. Empty states choose category artwork, with distinct All, Pinned, and Search variants. Generic row icons use compact art while service icons, file icons, color swatches, and actual image thumbnails retain priority. Onboarding uses the All illustration. Artwork settles once on appearance and respects Reduce Motion.
 
 Validation: debug and release bundles build and sign, all 26 core checks pass, and all 11 bundled vectors render with AppKit. Build 7 includes the resources in the standalone app so installation does not depend on the source checkout.
+
+## Keyboard category responsiveness — build 8
+
+Arrow-key category changes now use a nonanimated transaction: the active pill, results, and preview closure update together without waiting for the mouse-driven spring. Mouse category clicks retain their sliding capsule. Empty-category artwork appears immediately; onboarding retains its one-time entrance. Filter, query, and selection changes now share one scroll update, including Pinned transitions.
+
+Native sample-data validation covered rapid traversal through all ten filters, wraparound in both directions, populated/empty changes, and Option-arrow navigation while preserving a search query. Ordinary arrow keys still edit a nonempty search rather than changing categories. This verifies navigation behavior; it is not a frame-time benchmark.

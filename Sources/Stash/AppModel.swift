@@ -193,7 +193,14 @@ final class AppModel: ObservableObject {
         let choices: [(kind: ClipKind?, pinned: Bool)] = [(nil, false), (nil, true), (.text, false), (.link, false), (.image, false), (.screenshot, false), (.file, false), (.email, false), (.color, false), (.video, false)]
         let index = choices.firstIndex { $0.kind == category && $0.pinned == pinnedOnly } ?? 0
         let next = choices[(index + offset + choices.count) % choices.count]
-        selectFilter(next.kind, pinned: next.pinned)
+        // Key repeats can arrive faster than the category spring settles.
+        // Apply the entire keyboard change in one nonanimated transaction so
+        // the pill, result list, and preview state reflect this key immediately.
+        var transaction = Transaction(animation: nil)
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            selectFilter(next.kind, pinned: next.pinned)
+        }
     }
     func clearHistory() { history.clips.removeAll { !$0.pinned }; reconcileSelection(); save(); message("History cleared. Pinned clips kept.") }
     @discardableResult func copy(_ clip: Clip, plain: Bool = false) -> Bool {
