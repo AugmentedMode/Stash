@@ -60,9 +60,11 @@ jobs:
           # a Finder/LaunchServices first-launch or interactive UI acceptance test.
           app=/Applications/Stash.app/Contents/MacOS/Stash
           for mode in normal demo; do
-            args=()
-            if [[ "$mode" = demo ]]; then args=(--demo); fi
-            "$app" "${args[@]}" > "$RUNNER_TEMP/stash-$mode.log" 2>&1 &
+            if [[ "$mode" = demo ]]; then
+              "$app" --demo > "$RUNNER_TEMP/stash-$mode.log" 2>&1 &
+            else
+              "$app" > "$RUNNER_TEMP/stash-$mode.log" 2>&1 &
+            fi
             pid=$!
             trap 'kill "$pid" 2>/dev/null || true' EXIT
             for attempt in {1..15}; do
