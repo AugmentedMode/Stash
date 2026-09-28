@@ -1,0 +1,95 @@
+name: Public download smoke test
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  install:
+    name: Install on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-15, macos-26]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+      HOMEBREW_NO_INSTALL_CLEANUP: '1'
+    steps:
+      # Intentionally no checkout or source build: test the public binary only.
+      - name: Verify fresh environment
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = arm64
+          test ! -e /Applications/Stash.app
+          test ! -e "$HOME/Library/Application Support/Stash"
+          sw_vers
+      - name: Install the published Homebrew cask
+        run: |
+          brew tap augmentedmode/stash
+          brew install --cask augmentedmode/stash/stash
+          brew info --cask augmentedmode/stash/stash
+      - name: Verify installed bundle and report Gatekeeper assessment
+        run: |
+          set -euo pipefail
+          app=/Applications/Stash.app
+          codesign --verify --deep --strict "$app"
+          test "$(lipo -archs "$app/Contents/MacOS/Stash")" = arm64
+          test -s "$app/Contents/Resources/LICENSE.txt"
+          test -s "$app/Contents/Resources/THIRD_PARTY_NOTICES.md"
+          test ! -e "$app/Contents/Resources/history.json"
+          if /usr/libexec/PlistBuddy -c 'Print :StashPreview' "$app/Contents/Info.plist" 2>/dev/null; then
+            echo 'Unexpected preview flag in public release'
+            exit 1
+          fi
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist"
+          otool -L "$app/Contents/MacOS/Stash"
+          xattr -p com.apple.quarantine "$app" || true
+          # Assessment is reported, not bypassed. Rejection is expected without notarization.
+          set +e
+          spctl --assess --type execute --verbose=2 "$app" > "$RUNNER_TEMP/gatekeeper.txt" 2>&1
+          result=$?
+          set -e
+          cat "$RUNNER_TEMP/gatekeeper.txt"
+          echo "Gatekeeper assessment exit status: $result" >> "$GITHUB_STEP_SUMMARY"
+          echo 'This workflow does not approve Open Anyway or grant Accessibility permission.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Smoke-test normal and sample-data process startup
+        run: |
+          set -euo pipefail
+          # Direct executable startup tests runtime compatibility only. It is not
+          # a Finder/LaunchServices first-launch or interactive UI acceptance test.
+          app=/Applications/Stash.app/Contents/MacOS/Stash
+          for mode in normal demo; do
+            args=()
+            if [[ "$mode" = demo ]]; then args=(--demo); fi
+            "$app" "${args[@]}" > "$RUNNER_TEMP/stash-$mode.log" 2>&1 &
+            pid=$!
+            trap 'kill "$pid" 2>/dev/null || true' EXIT
+            for attempt in {1..15}; do
+              sleep 1
+              if ! kill -0 "$pid" 2>/dev/null; then
+                cat "$RUNNER_TEMP/stash-$mode.log"
+                echo "Stash exited during $mode startup"
+                exit 1
+              fi
+            done
+            ps -p "$pid" -o pid=,stat=,comm=
+            kill "$pid"
+            wait "$pid" || true
+            trap - EXIT
+            cat "$RUNNER_TEMP/stash-$mode.log"
+            echo "Passed: $mode process remained alive for 15 seconds." >> "$GITHUB_STEP_SUMMARY"
+          done
+      - name: Uninstall without deleting user data
+        run: |
+          brew uninstall --cask augmentedmode/stash/stash
+          test ! -e /Applications/Stash.app
+      - name: Report startup logs
+        if: always()
+        run: |
+          for logfile in "$RUNNER_TEMP"/stash-*.log; do
+            if [[ -f "$logfile" ]]; then
+              echo "Log: $logfile"
+              cat "$logfile"
+            fi
+          done
