@@ -46,3 +46,20 @@ Apple's references: [Developer ID](https://developer.apple.com/developer-id/) an
 - Intel and older macOS hardware testing; the current DMG is arm64 only.
 
 Local signature integrity and a valid DMG checksum do not substitute for those checks.
+
+## Source publication
+
+The original application source is GPL-3.0-only. Include `LICENSE` and
+`THIRD_PARTY_NOTICES.md` with distributions. For a binary release, make the
+corresponding source and build scripts for that exact version available and link
+them from the release. Do not treat an ad-hoc signed local build as a public release.
+
+Service-icon redistribution permission was confirmed by the maintainer; retain
+`THIRD_PARTY_NOTICES.md` and the asset inventory. Before each publication, review
+the actual staged files and Git history for personal content and credentials.
+The marketing website is a separate repository and must not be bundled with the app.
+
+CI runs formatting, isolated integration checks, and a release bundle build on
+GitHub's [macOS 26 runner](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
+The workflow uses [checkout v7.0.1](https://github.com/actions/checkout/releases/tag/v7.0.1).
+Public source is maintained on `main`. Check the Checks workflow before publishing binaries.

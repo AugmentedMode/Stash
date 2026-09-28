@@ -1,3 +1,13 @@
 .build/
-dist/
+/dist/
 .DS_Store
+.swiftpm/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+
+# The marketing site is maintained in a separate sibling repository.
+/website/
+/website-*-preview.png

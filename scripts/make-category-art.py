@@ -61,9 +61,11 @@ class Artwork:
         self.pdf.translate(x, y)
         self.pdf.rotate(degrees)
         self.pdf.translate(-x, -y)
-        yield
-        self.pdf.restoreState()
-        self.svg.append('</g>')
+        try:
+            yield
+        finally:
+            self.pdf.restoreState()
+            self.svg.append('</g>')
 
     def glint(self, x, y, size=4):
         self.path([('M',x-size,y),('L',x+size,y),('M',x,y-size),('L',x,y+size)], width=1.3, opacity=.65)
@@ -81,7 +83,7 @@ class Artwork:
         self.pdf.showPage()
         self.pdf.save()
 
-for name in ['all','pinned','text','link','image','screenshot','file','video','email','color','search']:
+def generate_artwork(name):
     a = Artwork(name)
     a.ellipse(80,105,44,5,fill='#171923',opacity=.22)
     if name in ['all','text','pinned','search']:
@@ -161,4 +163,14 @@ for name in ['all','pinned','text','link','image','screenshot','file','video','e
     a.glint(139,75,4)
     a.ellipse(130,15,1.6,1.6,opacity=.5)
     a.finish()
-print('Generated 11 SVG masters and matching PDF vectors.')
+
+
+def main():
+    categories = ["all", "pinned", "text", "link", "image", "screenshot", "file", "video", "email", "color", "search"]
+    for name in categories:
+        generate_artwork(name)
+    print("Generated 11 SVG masters and matching PDF vectors.")
+
+
+if __name__ == "__main__":
+    main()

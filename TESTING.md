@@ -112,3 +112,23 @@ Added checks using generated image data, isolated pasteboards, and temporary dir
 - Real directory event delivery, skipping old files, stopping capture, and skipping files on resume.
 
 Native QA preview inspected the Screenshots tab, empty state, setup action, and settings sheet. No user clipboard or history was used in core tests. A live system screenshot with the floating thumbnail, folder permission prompts, and cross-app ⌘V remain manual acceptance checks; synthetic file-event tests do not establish their end-to-end timing.
+
+
+## Inline Prompts category — September 28, 2026
+
+Prompts now appears immediately after Screenshots; Images is the first item in More. Native QA verified the main-window empty state, Command-N creation, a draft preserved through Screenshots → Prompts, Command-S save, Return opening a prompt, field entry with a rendered preview, Escape back to the list, and the More menu. Prompt editing and reuse no longer open sheets. The only prompt confirmation is deletion. Clipboard shortcuts are isolated from prompt editing and field entry; prompt drafts live in the model while switching categories. QA used sample data and did not paste into another app.
+
+## Maintainability refactor
+
+Run `./scripts/check.sh` for the debug app build and all core checks; run
+`./scripts/format.sh --check` for Swift formatting. Checks are split by behavior
+and registered explicitly in `Tests/StashCoreTests/CoreChecks.swift`.
+
+New regressions cover pin-exempt byte budgets, newest-prefix eviction, compiled
+Unicode search, UTF-8 prompt validation, replacing saved files and repairing
+permissions, suppressing queued screenshot failures after stop, and releasing an
+active screenshot observer. The baseline had 33 checks; the refactor has 40.
+
+Repeat manual keyboard navigation, prompt editing, inline Settings, screenshot
+pause/resume, and cross-app paste flows after UI changes. Automated core checks
+do not verify those interactions or older macOS compatibility.

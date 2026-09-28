@@ -1,104 +1,154 @@
-# Stash
+<p align="center">
+  <img src="docs/images/stash-icon.png" width="88" height="88" alt="Stash app icon">
+</p>
 
-A compact, keyboard-first macOS clipboard palette inspired by CopyCat's documented behavior. Uses native Liquid Glass on macOS 26, with a native material fallback on macOS 14–15. Built from scratch with SwiftUI and AppKit. No third-party dependencies, servers, accounts, analytics, or network requests.
+<h1 align="center">Stash</h1>
 
-## Run
+<p align="center"><strong>A little more memory for your Mac.</strong><br>
+A native, keyboard-first home for everything you copy.</p>
 
-Open `dist/Stash.app` and click **Start collecting**. Stash lives in your menu bar; closing its window keeps capture running. Right-click the menu-bar icon to pause or quit.
+<p align="center">
+  <a href="https://github.com/AugmentedMode/Stash/actions/workflows/ci.yml"><img src="https://github.com/AugmentedMode/Stash/actions/workflows/ci.yml/badge.svg?branch=main" alt="Build and checks"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPLv3-blue" alt="License: GPLv3"></a>
+  <img src="https://img.shields.io/badge/macOS-14%2B-111827?logo=apple&logoColor=white" alt="macOS 14 and later">
+  <img src="https://img.shields.io/badge/built_with-Swift-F05138?logo=swift&logoColor=white" alt="Built with Swift">
+</p>
 
-- **⌘⇧V** opens or closes Stash from any app.
-- Type to search, **↑/↓** to select, **Return** to paste.
-- **⌘1–9** pastes a result directly.
-- **←/→** switches categories when search is empty; **⌥←/⌥→** works while searching.
-- **⌘Y** opens the selected clip’s preview inside the palette.
-- **⌘P** pins the selected clip; **⌘Delete** deletes it. **⌘Z** undoes a deletion while Undo is visible.
-- **⌘K** opens searchable actions for the selected clip, including **Paste without formatting** for text clips. **⇧Return** is its direct shortcut.
-- Images and Screenshots offer a thumbnail grid; **↑/↓** selects clips and **←/→** continues switching categories. Click a thumbnail to select; double-click or press Space to expand.
-- Expanded images start fitted to the viewport. Click the image or **Zoom in** to enlarge, scroll to explore, and choose **Fit** to see the whole image.
-- **Rename in Stash** changes only the label, preserving the original clipboard contents.
-- **⌘F** focuses search; **⌘,** opens Settings; **Esc** closes the panel.
-- Click a row once to paste; use its context menu to copy without switching apps.
-- Escape closes a preview first, then clears search, then dismisses the palette.
-- Without Accessibility permission, Copy & return restores the selected clip and returns focus to your previous app; use ⌘V there.
-- The palette sizes to your history when opened and starts with All clips. Previews stay inside the same window.
+<p align="center">
+  <a href="#get-started">Get started</a> ·
+  <a href="docs/USAGE.md">User guide</a> ·
+  <a href="CONTRIBUTING.md">Contribute</a> ·
+  <a href="https://github.com/AugmentedMode/Stash/issues">Report a bug</a>
+</p>
 
-Automatic paste needs macOS Accessibility permission. Use **Settings → Enable Quick Paste** to grant it yourself. Without permission, Stash copies the item and you can paste normally with ⌘V. Stash checks that the destination app is active before posting a paste keystroke.
+<p align="center">
+  <img src="docs/images/stash.jpg" width="740" alt="Stash's native macOS palette showing pinned notes, a color swatch, screenshot thumbnails, and keyboard shortcuts.">
+  <br><sub>Captured from the native app using synthetic sample content. No personal clipboard data.</sub>
+</p>
 
-## Build and test
+Press **⌘⇧V**, find what you copied, and get back to work. Stash keeps text, links,
+images, screenshots, colors, and file references together in a small menu-bar app.
+Your history stays on your Mac: no account, cloud sync, analytics, or network requests.
 
-Requires macOS 14+ and Apple's Command Line Tools (no full Xcode installation needed).
+## What you can do
+
+- **Find a previous copy.** Search your history, filter by content type, and navigate with the keyboard.
+- **Keep the useful things.** Pin clips, give them readable names, and paste without formatting.
+- **Recognize your links.** See service icons and readable page or ticket labels derived locally from the original URL.
+- **Browse images and screenshots.** Use the thumbnail grid, fitted previews, and zoom. Optionally collect newly saved macOS screenshots.
+- **Reuse your prompts.** Save named templates with fields like `{{topic}}` and `{{tone}}`. Fill them in and copy or paste—no AI service involved.
+- **Choose what stays.** Pause capture, exclude apps, set retention, or keep clipboard history only for the current session.
+
+Built with **SwiftUI and AppKit**, with Liquid Glass on macOS 26 and native materials
+on earlier supported versions. The app has **no third-party runtime dependencies**.
+
+## Get started
+
+### Build from source
+
+**Run:** macOS 14 or later. **Build:** Xcode 26 or matching Apple Command Line Tools
+with the macOS 26 SDK. The newer SDK compiles the availability-guarded glass UI;
+the deployment target remains macOS 14.
 
 ```sh
-./scripts/build-app.sh
-CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" \
-SWIFTPM_MODULECACHE_OVERRIDE="$PWD/.build/module-cache" \
-swift run --disable-sandbox --cache-path "$PWD/.build/package-cache" StashCoreChecks
+git clone https://github.com/AugmentedMode/Stash.git
+cd Stash
+./scripts/build-app.sh release
+open dist/Stash.app
 ```
 
-A debug bundle opens with example clips and no monitoring. A release bundle opens the welcome flow. The build script produces an ad-hoc signed local app and an app-specific icon. It is not Developer ID signed or notarized for public distribution. The output targets the build machine's architecture.
+Click **Start collecting**. Stash stays in the menu bar when you close its window.
+You can move the built app to Applications when you are ready to use it regularly.
 
-For a safe visual preview with example clips and **no clipboard monitoring or disk history**:
+The build script creates an ad-hoc signed app for your Mac's architecture. It is
+not a Developer ID signed or notarized download. See the [release guide](docs/RELEASE.md)
+for packaging and public binary distribution.
+
+### Try it with sample data
 
 ```sh
-open dist/Stash.app --args --demo
+STASH_APP_OUTPUT='dist/Stash QA.app' ./scripts/build-app.sh debug
+open 'dist/Stash QA.app'
 ```
 
-Quit a running instance before changing modes. Preview mode does not auto-paste into another app; its copy action still copies the selected example to the system clipboard.
+The QA app uses synthetic clips, separate preferences, no history files, no capture,
+and no global shortcut. Its Copy action still writes to the system clipboard.
 
-## Behavior and privacy
+### Enable quick paste
 
-- Captures text, URLs, email addresses, hex colors, PNG/TIFF images, and file URLs (including videos). Rich text and HTML representations are preserved when available.
-- Video and other file clips reference the original files; Stash does not make copies of file contents. Moved or deleted files may no longer paste.
-- Ignores concealed, transient, autogenerated, restored, and remote clipboard markers, and common password-manager apps. This relies on source applications marking sensitive data correctly; unmarked secrets copied from other apps can enter history.
-- Custom application exclusions are available in Settings.
-- History is saved to `~/Library/Application Support/Stash/history.json`, with owner-only file permissions. This is a local JSON file, not a separately encrypted vault. Your Mac's account protections and disk encryption govern access.
-- Default retention: 30 days. Options: 1, 7, 30, 90 days, or forever. Pinned clips survive normal retention and history clearing.
-- At most 500 unpinned clips and 200 MB of captured data (pinned clips are exempt). Individual copies larger than 20 MB are skipped. Unsupported clipboard formats are ignored.
-- Session-only history clears saved disk history immediately, keeps current clips in memory, and discards all clips—including pins—on quit. The UI confirms the change before clearing the saved file.
-- Polls the clipboard change counter every 0.6 seconds (1.2 seconds in Low Power Mode), with timer tolerance. Capture timers stop while paused, asleep, or in an inactive user session. Copies during suspension are skipped. It doesn't log clipboard contents.
-- Corrupt history is left untouched and the UI reports the issue; it is not silently overwritten.
+Automatic paste needs **Accessibility** permission. Open **Settings → Enable Quick
+Paste** and grant access in macOS. Without it, Stash copies the selected item and
+returns to your previous app; press **⌘V** there.
 
-## Project structure
+## At your fingertips
 
-- `Sources/StashCore`: classification, safe clipboard round-trip, deduplication, search, retention, local persistence.
-- `Sources/Stash`: native UI, clipboard monitor, menu bar, global hotkey, focus restoration and paste, settings.
-- `Tests/StashCoreTests`: isolated pasteboards and temporary directories; no reads or writes to your real clipboard history.
-- `scripts`: reproducible bundle build and icon generation.
+| Shortcut | Action |
+| :--- | :--- |
+| **⌘⇧V** | Show or hide Stash |
+| **↑ / ↓** | Select a clip |
+| **Return** | Paste the selected clip |
+| **⇧Return** | Paste without formatting |
+| **⌘1–9** | Paste a visible result directly |
+| **← / →** | Switch categories; use **⌥← / ⌥→** while searching |
+| **⌘P** | Pin or unpin a clip |
+| **⌘K** | Open clip actions |
+| **⌘Y** | Preview the selected clip |
+| **⌘⇧P** | Open saved prompts |
+| **⌘,** | Open Settings |
+| **Esc** | Go back, clear search, or close the palette |
 
-## Scope
+See the [user guide](docs/USAGE.md) for screenshot setup, prompt fields, and the full workflow.
 
-This is an independent implementation of the public product behavior, not a modification or decompilation of CopyCat. It does not reuse CopyCat branding, code, or assets. Automatic updates, licensing, and public distribution infrastructure are intentionally not included.
+## Your clipboard, on your Mac
 
-## Native glass implementation
+Stash stores data locally in `~/Library/Application Support/Stash/`. Clipboard
+history lives in `history.json`; explicitly saved prompts live in `prompts.json`.
+The directory and files have owner-only permissions. **They are plaintext JSON,
+not an encrypted vault.**
 
-The macOS 26 window uses [Apple’s NSGlassEffectView](https://developer.apple.com/documentation/appkit/nsglasseffectview), with the SwiftUI content inside its `contentView`. A behind-window NSVisualEffectView supplies the live desktop backdrop to the floating window. There is no painted background gradient or animated mock glass. The clear glass variant sits above a separate native HUD backdrop at reduced opacity, with a subtle cool readability tint. Text and controls retain their own opacity. Earlier systems use NSVisualEffectView alone. When Reduce Transparency is enabled at launch, the backdrop uses full opacity.
+- Unpinned clips expire after **30 days** by default. Choose 1, 7, 30, or 90 days, or keep them indefinitely.
+- History retains up to **500 unpinned clips / 200 MB**. Pins are exempt; individual copies above **20 MB** are skipped.
+- Session-only mode clears saved clipboard history and discards current clips—including pins—on quit. Saved prompts remain separate.
+- Sensitive clipboard markers and common password-manager apps are excluded. **Unmarked secrets from other apps can still enter history.** Add app exclusions or pause capture when needed.
+- File clips reference the originals. Moving or deleting a file can make its clip unavailable.
+- Screenshot collection is opt-in. Saved screenshots cannot be attributed to an app, so app exclusions do not filter them.
 
-## Installer
+Stash never logs clipboard contents. History writes are coalesced for up to one
+second, so an abrupt crash can lose the most recent changes.
 
-Run `./scripts/package-dmg.sh` after a release build. The current Apple silicon installer is `dist/Stash-1.0-arm64.dmg`. Drag Stash to Applications; the included guide explains setup and shortcuts. This preview is ad-hoc signed, so downloaded copies may be blocked by Gatekeeper. See [release preparation](docs/RELEASE.md) for Developer ID signing and notarization, and [UX flow review](docs/UX-FLOWS.md) for tested flows and outstanding acceptance checks.
+## Contributing
 
-## Energy and responsiveness
+Bug reports, focused improvements, documentation, and testing on different Macs
+are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before starting.
 
-Build 2 fixes a sustained SwiftUI lazy-list layout loop, gives the native panel sole control of window sizing, caches filtered results, and makes unchanged clipboard checks return before app metadata work. History writes coalesce for at most one second and flush at quit/system sleep. Session-only capture avoids disk writes after its initial clear. The most recent second of changes can be lost on an abrupt crash. Retention is checked every five minutes without publishing an unchanged history.
+```sh
+./scripts/check.sh             # Build and run 40 isolated core checks
+./scripts/format.sh --check    # Check Swift formatting
+./scripts/format.sh            # Format Swift source
+```
 
-See [performance notes](docs/PERFORMANCE.md) for measured CPU results, limitations, and design tradeoffs.
+Tests use named pasteboards and temporary directories, not your real clipboard or
+history. Run them in a macOS login session. The test runner is an executable,
+`StashCoreChecks`, so full Xcode/XCTest is not required; `swift test` is not the entry point.
 
-## If the shortcut does not open Stash
+| Location | Purpose |
+| :--- | :--- |
+| [`Sources/Stash/Application`](Sources/Stash/Application) | Lifecycle, window, keyboard, monitoring, app state |
+| [`Sources/Stash/Features`](Sources/Stash/Features) | History, images, prompts, settings |
+| [`Sources/Stash/Design`](Sources/Stash/Design) | Shared visuals and icons |
+| [`Sources/StashCore`](Sources/StashCore) | Clipboard data, search, retention, screenshots, persistence |
+| [`Tests/StashCoreTests`](Tests/StashCoreTests) | Regression and integration checks |
+| [`scripts`](scripts) | Build, checks, formatting, packaging, artwork |
 
-⌘⇧V works while the real Stash app is running in the menu bar. It cannot launch an app that has quit. Open Stash.app to start it. Stash QA is a separate developer preview and deliberately has no global shortcut. If another app or another Stash copy claims the shortcut, the release shows a persistent warning; the menu-bar icon remains available. Build 3 also corrects activation/deactivation ordering during opening.
+[Architecture](docs/ARCHITECTURE.md) · [Testing](TESTING.md) ·
+[Performance](docs/PERFORMANCE.md) · [Security](SECURITY.md)
 
-## Recognizable links — build 5
+## License
 
-Notion, GitHub, Figma, and Google Docs/Sheets/Slides links get destination-aware icons and labels. Readable names come from URL paths when available; opaque document IDs use honest service labels. Installed app icons are resolved once locally, with built-in fallback symbols. No page or favicon requests are made. The exact original URL remains the copy/paste payload. Preview separates the destination from the app it was copied from, exposes the full URL, and offers an explicit Open original link action. Search includes derived names and service labels.
+Stash's original source code and category artwork are licensed under
+**GNU GPL version 3 only** (`GPL-3.0-only`). See [LICENSE](LICENSE).
 
-The palette opens at 620 × 560 points and keeps its size when switching categories, searching, or opening previews. Longer lists scroll within the window; empty categories retain the same space. Manual resizing is preserved when navigating and reopening the palette.
+Third-party service icons and trademarks are separate from the GPL grant. See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for attribution and scope.
 
-## Screenshots, sorted — build 6
-
-Open **Screenshots → Set up screenshots** and enable **Collect saved screenshots**. **Copy new screenshots to clipboard** is on by default within this opt-in feature: take a screenshot, wait for macOS to save it, then paste with ⌘V. Turn that second switch off to collect screenshots without replacing your clipboard.
-
-The save folder is initially read from macOS Screenshot preferences (Desktop otherwise). If you change the destination in ⇧⌘5 → Options, choose that same folder in Stash. The watcher responds to filesystem events, reads images in the background, and skips existing files. Pause, sleep, and inactive sessions stop capture; resuming does not import screenshots taken while paused. Preview mode never starts the watcher.
-
-Only files carrying macOS's screenshot metadata are imported, regardless of filename or language. PNG, JPEG, and TIFF captures are normalized to PNG and stored in history, so deleting the original does not break pasting. Limits are 20 MB before and after conversion, 16,000 pixels per dimension, and 40 megapixels. Unsupported or oversized images are skipped. Marked clipboard screenshots and copied screenshot files use the same category; unmarked clipboard images remain Images unless matched to a saved screenshot arriving within 15 seconds. Matching captures merge without losing their pin or history identity.
-
-Automatic copying yields to newer clipboard activity. Folder errors appear in Screenshot settings with a Choose action to restore access. Clipboard app exclusions still apply to clipboard reads; they cannot attribute the contents of a saved screenshot to an app and do not filter saved captures. Existing retention and session-only settings apply to screenshots.
+Stash is an independent project and is not affiliated with the services shown in its interface.

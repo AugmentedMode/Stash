@@ -1,0 +1,26 @@
+name: Bug report
+description: Report a reproducible problem in Stash.
+body:
+  - type: markdown
+    attributes:
+      value: Use synthetic content. Do not attach real clipboard history, saved prompts, or credentials. Report vulnerabilities privately through Security.
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: macOS version, Apple silicon or Intel, and Stash commit/build.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include whether this happens in the real app or QA preview.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true

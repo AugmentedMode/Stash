@@ -39,3 +39,26 @@ For very large image-heavy libraries, the JSON store still rewrites the entire r
 The redesigned release (PID 76307) was sampled seven times, five seconds apart, for 30 seconds. Six samples reported 0.0% CPU and one reported 0.2%; memory was 42–43 MB. Total CPU time moved from 0.30 to 0.32 seconds. This is still a short local measurement, not a long-duration battery benchmark. The only subsequent app-source change was shortening the whitespace-only clip label.
 
 Native Settings displayed the energy behavior. Pausing and closing Settings exposed the compact header Resume control; resuming restored Copy mode. Capture was resumed before graceful quit. OS sleep and Low Power Mode were not toggled during the session.
+
+## Refactor measurements — September 28, 2026
+
+The refactor tokenizes queries once per search, resolves selection once per list
+render, shares in-flight image decodes, and scans/sorts only unseen screenshot
+candidates. A successful screenshot scan no longer schedules four unconditional
+retry scans. Pin-aware retention uses one pass instead of repeatedly finding and
+removing the oldest unpinned entry.
+
+Reproduce the synthetic search comparison with:
+
+```sh
+CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-cache" \
+SWIFTPM_MODULECACHE_OVERRIDE="$PWD/.build/module-cache" \
+swift run -c release --disable-sandbox --cache-path "$PWD/.build/package-cache" \
+  StashCoreChecks --benchmark
+```
+
+On this Apple silicon Mac with Swift 6.3.3, one release-mode run of 100 searches
+over 500 synthetic text clips took **224.4 ms** tokenizing per clip and **176.3 ms**
+tokenizing once per search, with identical result counts. This isolates query
+preparation; it is not an end-to-end app benchmark. It does not establish UI frame
+rates, energy savings, or performance on large pinned image collections.
