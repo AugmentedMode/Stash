@@ -7,7 +7,7 @@ struct WelcomeView: View {
     var body: some View {
         VStack(spacing: 18) {
             Spacer()
-            Image(systemName: "square.stack.3d.up.fill").font(.system(size: 40, weight: .light)).foregroundStyle(Color.accent).padding(21).background(Color.accent.opacity(0.07), in: RoundedRectangle(cornerRadius: 32))
+            ClipStackIllustration().frame(height: 112)
             Text("A little space for\neverything you copy.").font(.system(size: 31, weight: .medium)).tracking(-1.4).multilineTextAlignment(.center)
             Text("Copy freely. Find it instantly. Keep your flow.").font(.system(size: 16)).foregroundStyle(Color.muted)
             HStack(spacing: 27) { Label("Local history", systemImage: "lock.shield"); Label("No account", systemImage: "person.crop.circle.badge.checkmark"); Label("No tracking", systemImage: "eye.slash") }.font(.system(size: 12)).foregroundStyle(Color.muted).padding(.top, 4)

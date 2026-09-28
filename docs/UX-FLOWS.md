@@ -52,3 +52,17 @@ For larger libraries, prioritize incremental history storage and thumbnail cachi
 Notion, GitHub, Figma, and Google Docs/Sheets/Slides links get destination-aware icons and labels. Readable names come from URL paths when available; opaque document IDs use honest service labels. Installed app icons are resolved once locally, with built-in fallback symbols. No page or favicon requests are made. The exact original URL remains the copy/paste payload. Preview separates the destination from the app it was copied from, exposes the full URL, and offers an explicit Open original link action. Search includes derived names and service labels.
 
 The palette opens at 620 × 560 points and keeps its size when switching categories, searching, or opening previews. Longer lists scroll within the window; empty categories retain the same space. Manual resizing is preserved when navigating and reopening the palette.
+
+## Design experiment — glass and motion
+
+Branch: `design/glass-and-motion`.
+
+- Deeper charcoal tint over native glass, with the existing fine edge highlight and a faint lavender selection fill.
+- Shared category capsule moves with a 180 ms spring, including categories selected from More.
+- A 140 ms opacity/5-point entrance animates the panel content without moving its window frame or deferring search focus.
+- Medium-weight clip titles, quieter metadata and footer controls, and an accented Copy/Paste action.
+- Preview crossfades with an 8-point horizontal offset over 160 ms. Pin symbols fill and bounce once on a state change. Keyboard selection and scrolling update immediately.
+- Native folded-card illustrations settle once on appearance in onboarding and empty states. No continuous animations or new dependencies.
+- Reduce Motion disables the new animations; Reduce Transparency uses an opaque charcoal surface.
+
+Validation: debug QA bundle builds and signs; all 26 existing core checks pass. Native sample-data checks cover category selection, search filtering, preview/back, pinning, and the illustrated empty state. Exact animation timing, Reduce Motion/Transparency with live system settings, and onboarding still need human visual acceptance. The QA bundle uses sample clips without monitoring or saving clipboard history.

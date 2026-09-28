@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import Carbon
+import QuartzCore
 import ApplicationServices
 import StashCore
 
@@ -70,7 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             container.layer?.cornerRadius = 24
             container.layer?.masksToBounds = true
             container.addSubview(backdrop)
-            glass.tintColor = NSColor(calibratedWhite: 0.05, alpha: 0.12)
+            glass.tintColor = NSColor(calibratedWhite: 0.04, alpha: 0.18)
             container.addSubview(glass)
             panel.contentView = container
         } else {
@@ -118,6 +119,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             finishPresentation()
             return
         }
+        let animateEntrance = !panel.isVisible
         presentationPending = true
         if let front = NSWorkspace.shared.frontmostApplication, front.processIdentifier != ProcessInfo.processInfo.processIdentifier { previousApp = front }
         model.previewOpen = false; model.query = ""; model.selectFilter(nil)
@@ -129,6 +131,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         // AppKit confirms activation instead of racing another app's focus.
         panel.makeKeyAndOrderFront(nil)
         if NSApp.isActive { finishPresentation() }
+        if animateEntrance { revealPanel() }
+    }
+    private func revealPanel() {
+        guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
+              let layer = panel.contentView?.layer else { return }
+        // Animate presentation only: window geometry and keyboard focus stay live.
+        let fade = CABasicAnimation(keyPath: "opacity")
+        fade.fromValue = 0; fade.toValue = 1
+        let rise = CABasicAnimation(keyPath: "transform.translation.y")
+        rise.fromValue = layer.isGeometryFlipped ? 5 : -5; rise.toValue = 0
+        let entrance = CAAnimationGroup()
+        entrance.animations = [fade, rise]
+        entrance.duration = 0.14
+        entrance.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        layer.add(entrance, forKey: "stashEntrance")
     }
     private func finishPresentation() {
         guard presentationPending, NSApp.isActive else { return }

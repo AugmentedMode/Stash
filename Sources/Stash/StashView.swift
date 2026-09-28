@@ -8,7 +8,8 @@ extension Color {
     static let sidebar = Color(red: 0.14, green: 0.15, blue: 0.22)
     static let surface = Color(red: 0.16, green: 0.165, blue: 0.18)
     static let accent = Color(red: 0.76, green: 0.78, blue: 1.0)
-    static let muted = Color.white.opacity(0.80)
+    static let muted = Color.white.opacity(0.66)
+    static let quiet = Color.white.opacity(0.54)
     static let line = Color.white.opacity(0.075)
     static func hex(_ value: String) -> Color {
         var s = value.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: "")
@@ -31,13 +32,16 @@ struct Glyph: View {
 struct StashView: View {
     @ObservedObject var model: AppModel
     @FocusState private var searchFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Namespace private var categoryPill
     var body: some View {
         Group {
             if model.started { palette } else { WelcomeView(model: model) }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .background(Color(red: 0.025, green: 0.045, blue: 0.10).opacity(0.34), in: RoundedRectangle(cornerRadius: 24))
+        .background(Color(red: 0.035, green: 0.04, blue: 0.065).opacity(reduceTransparency ? 1 : 0.52), in: RoundedRectangle(cornerRadius: 24))
         .overlay(RoundedRectangle(cornerRadius: 24).strokeBorder(LinearGradient(colors: [.white.opacity(0.16), .white.opacity(0.03), .white.opacity(0.08)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 0.7))
         .tint(.accent)
         .sheet(isPresented: $model.settingsOpen, onDismiss: { model.quickPasteReady = AXIsProcessTrusted() }) { SettingsView(model: model) }
@@ -50,16 +54,22 @@ struct StashView: View {
         VStack(spacing: 0) {
             header
             Rectangle().fill(Color.line).frame(height: 0.5)
-            if model.previewOpen, let clip = model.selected {
-                VStack(spacing: 0) {
-                    HStack {
-                        Label("Clip preview", systemImage: "eye").font(.system(size: 12, weight: .medium)).foregroundStyle(Color.muted)
-                        Spacer()
-                        Button { model.previewOpen = false } label: { Label("Back", systemImage: "arrow.left") }.buttonStyle(.plain).font(.system(size: 12)).accessibilityLabel("Close preview")
-                    }.padding(.horizontal, 22).padding(.top, 16)
-                    DetailView(model: model, clip: clip).id(clip.id)
-                }.frame(maxHeight: .infinity)
-            } else { clipList }
+            ZStack {
+                if model.previewOpen, let clip = model.selected {
+                    VStack(spacing: 0) {
+                        HStack {
+                            Label("Clip preview", systemImage: "eye").font(.system(size: 12, weight: .medium)).foregroundStyle(Color.muted)
+                            Spacer()
+                            Button { model.previewOpen = false } label: { Label("Back", systemImage: "arrow.left") }.buttonStyle(.plain).font(.system(size: 12)).accessibilityLabel("Close preview")
+                        }.padding(.horizontal, 22).padding(.top, 16)
+                        DetailView(model: model, clip: clip).id(clip.id)
+                    }.frame(maxHeight: .infinity)
+                        .transition(.opacity.combined(with: .offset(x: reduceMotion ? 0 : 8)))
+                } else {
+                    clipList.transition(.opacity.combined(with: .offset(x: reduceMotion ? 0 : -8)))
+                }
+            }.clipped()
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.16), value: model.previewOpen)
             footer
         }
     }
@@ -96,7 +106,10 @@ struct StashView: View {
                 } label: {
                     HStack(spacing: 4) { Text([ClipKind.file, .email, .color, .video].contains(model.category ?? .text) ? model.category!.title : "More"); Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold)) }
                         .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.muted)
-                }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().padding(.leading, 5).accessibilityLabel("More categories")
+                }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                    .padding(.horizontal, 8).padding(.vertical, 5)
+                    .background { pillBackground(active: [.file, .email, .color, .video].contains(model.category ?? .text)) }
+                    .accessibilityLabel("More categories")
                 Spacer(minLength: 0)
                 if model.paused {
                     Button { model.paused = false } label: { Label("Resume", systemImage: "pause.circle.fill") }
@@ -106,6 +119,8 @@ struct StashView: View {
                         .help("A clip is copied and you return to your app; press ⌘V to paste. Enable one-step paste in Settings.")
                 }
             }
+            .animation(reduceMotion ? nil : .spring(duration: 0.18, bounce: 0.12), value: model.category)
+            .animation(reduceMotion ? nil : .spring(duration: 0.18, bounce: 0.12), value: model.pinnedOnly)
         }.padding(.horizontal, 22).padding(.top, 23).padding(.bottom, 16)
     }
     func chip(_ title: String, kind: ClipKind?, pinned: Bool = false) -> some View {
@@ -113,19 +128,26 @@ struct StashView: View {
         return Button { model.selectFilter(kind, pinned: pinned) } label: {
             HStack(spacing: 4) {
                 if pinned { Image(systemName: "pin.fill").font(.system(size: 10)) }
-                Text(title).font(.system(size: 12, weight: active ? .medium : .regular))
+                Text(title).font(.system(size: 12, weight: .medium))
             }.foregroundStyle(active ? Color.white : Color.muted)
-                .padding(.horizontal, 10).padding(.vertical, 5)
-                .background(active ? Color.white.opacity(0.10) : .clear, in: Capsule())
+                .padding(.horizontal, 8).padding(.vertical, 5)
+                .background { pillBackground(active: active) }
 
         }.buttonStyle(.plain).accessibilityLabel(title).accessibilityAddTraits(active ? .isSelected : [])
+    }
+    @ViewBuilder private func pillBackground(active: Bool) -> some View {
+        if active {
+            Capsule().fill(Color.accent.opacity(0.16))
+                .overlay(Capsule().strokeBorder(Color.accent.opacity(0.16), lineWidth: 0.5))
+                .matchedGeometryEffect(id: "category", in: categoryPill)
+        }
     }
     var clipList: some View {
         Group {
             if model.results.isEmpty {
                 VStack(spacing: 12) {
-                    Image(systemName: model.query.isEmpty ? (model.pinnedOnly ? "pin" : "square.on.square.dashed") : "magnifyingglass")
-                        .font(.system(size: 32, weight: .ultraLight)).foregroundStyle(Color.accent.opacity(0.7)).padding(.bottom, 3)
+                    ClipStackIllustration(symbol: !model.query.isEmpty ? "magnifyingglass" : model.pinnedOnly ? "pin.fill" : "text.alignleft")
+                        .frame(height: 100).padding(.bottom, 3)
                     Text(emptyTitle)
                         .font(.system(size: 17, weight: .medium))
                     Text(emptyMessage)
@@ -169,7 +191,7 @@ struct StashView: View {
                             }
                         }.padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 12)
                     }
-                    .onChange(of: model.selection) { _, id in if let id { withAnimation(.easeOut(duration: 0.10)) { proxy.scrollTo(id) } } }
+                    .onChange(of: model.selection) { _, id in if let id { proxy.scrollTo(id) } }
                     .onChange(of: model.category) { _, _ in if let first = model.results.first { proxy.scrollTo(first.id, anchor: .top) } }
                     .onChange(of: model.query) { _, _ in if let first = model.results.first { proxy.scrollTo(first.id, anchor: .top) } }
                 }
@@ -216,15 +238,19 @@ struct StashView: View {
                 }.padding(.horizontal, 19).padding(.vertical, 10).background(.white.opacity(0.045))
             }
             Rectangle().fill(Color.line).frame(height: 0.5)
-            HStack(spacing: 15) {
+            HStack(spacing: 12) {
                 hint("↑↓", "Navigate").help("Use Up and Down to select a clip")
                 hint("←→", "Category").help("Switch categories. While searching, use Option + Left or Right.")
                 Button { if let clip = model.selected { model.paste(clip) } } label: {
-                    hint("↵", model.demo || model.quickPasteReady ? "Paste" : "Copy")
+                    hint("↵", model.demo || model.quickPasteReady ? "Paste" : "Copy", prominent: true)
                 }.disabled(model.selected == nil)
                     .help(model.demo || model.quickPasteReady ? "Paste selected clip" : "Copy and return to \(model.destinationName); then press ⌘V")
                 Button { if let clip = model.selected { model.togglePin(clip) } } label: {
-                    hint("⌘P", model.selected?.pinned == true ? "Unpin" : "Pin")
+                    HStack(spacing: 4) {
+                        PinGlyph(pinned: model.selected?.pinned == true).id(model.selected?.id)
+                            .font(.system(size: 10))
+                        hint("⌘P", model.selected?.pinned == true ? "Unpin" : "Pin")
+                    }
                 }.disabled(model.selected == nil).accessibilityLabel("Pin or unpin selected clip")
                 Button { if let clip = model.selected { model.remove(clip) } } label: { hint("⌘⌫", "Delete") }
                     .disabled(model.selected == nil).help("Delete selected clip. Undo with ⌘Z.").accessibilityLabel("Delete selected clip")
@@ -234,11 +260,11 @@ struct StashView: View {
 
         }
     }
-    func hint(_ key: String, _ title: String) -> some View {
+    func hint(_ key: String, _ title: String, prominent: Bool = false) -> some View {
         HStack(spacing: 5) {
             Text(key).font(.system(size: 11, weight: .regular, design: .monospaced)).padding(.horizontal, 5).padding(.vertical, 4).background(.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 5))
-            Text(title).font(.system(size: 11))
-        }.foregroundStyle(Color.muted).fixedSize()
+            Text(title).font(.system(size: 11, weight: prominent ? .semibold : .regular))
+        }.foregroundStyle(prominent ? Color.accent : Color.quiet).fixedSize()
     }
 }
 
@@ -253,13 +279,13 @@ struct PaletteRow: View {
         HStack(spacing: 13) {
             thumbnail.frame(width: 30, height: 30)
             VStack(alignment: .leading, spacing: 4) {
-                Text(clip.displayTitle).font(.system(size: 14, weight: .regular)).foregroundStyle(.white.opacity(selected ? 1 : 0.9)).lineLimit(1)
+                Text(clip.displayTitle).font(.system(size: 14, weight: .medium)).foregroundStyle(.white.opacity(selected ? 1 : 0.9)).lineLimit(1)
                 HStack(spacing: 5) {
                     Text(clip.linkPresentation.map { $0.service == .web ? $0.host : $0.label + " · " + $0.host } ?? clip.sourceName)
                     Text("·").opacity(0.7)
                     Text(clip.createdAt.formatted(date: .omitted, time: .shortened))
-                    if clip.pinned { Image(systemName: "pin.fill").font(.system(size: 9)).padding(.leading, 2) }
-                }.font(.system(size: 11)).foregroundStyle(Color.muted).lineLimit(1)
+                    PinGlyph(pinned: clip.pinned).font(.system(size: 9)).opacity(clip.pinned ? 1 : 0).padding(.leading, 2)
+                }.font(.system(size: 11)).foregroundStyle(Color.quiet).lineLimit(1)
             }
             Spacer(minLength: 6)
             Button(action: onPaste) {
@@ -269,7 +295,8 @@ struct PaletteRow: View {
                     .background(hovering ? .white.opacity(0.08) : .clear, in: RoundedRectangle(cornerRadius: 6))
             }.buttonStyle(.plain).help("Paste this clip").accessibilityLabel("Paste \(clip.displayTitle)")
         }.padding(.horizontal, 15).padding(.vertical, 10)
-            .background(selected ? Color.white.opacity(0.10) : hovering ? .white.opacity(0.035) : .clear, in: RoundedRectangle(cornerRadius: 12))
+            .background(selected ? Color.accent.opacity(0.13) : hovering ? .white.opacity(0.045) : .clear, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(selected ? Color.accent.opacity(0.14) : .clear, lineWidth: 0.5))
             .contentShape(Rectangle())
             .onTapGesture(perform: onPaste)
             .onHover { hovering = $0 }
@@ -298,7 +325,7 @@ struct DetailView: View {
     let clip: Clip
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack { Label(clip.kind.title.uppercased(), systemImage: clip.kind.symbol).font(.system(size: 10, weight: .medium)).tracking(1.1).foregroundStyle(Color.muted); Spacer(); Button { model.togglePin(clip) } label: { Image(systemName: clip.pinned ? "pin.fill" : "pin").foregroundStyle(clip.pinned ? Color.accent : Color.muted) }.buttonStyle(.plain).help(clip.pinned ? "Unpin (⌘P)" : "Pin (⌘P)").accessibilityLabel(clip.pinned ? "Unpin clip" : "Pin clip")
+            HStack { Label(clip.kind.title.uppercased(), systemImage: clip.kind.symbol).font(.system(size: 10, weight: .medium)).tracking(1.1).foregroundStyle(Color.muted); Spacer(); Button { model.togglePin(clip) } label: { PinGlyph(pinned: clip.pinned) }.buttonStyle(.plain).help(clip.pinned ? "Unpin (⌘P)" : "Pin (⌘P)").accessibilityLabel(clip.pinned ? "Unpin clip" : "Pin clip")
                 Menu { Button("Copy") { model.copy(clip) }; Button("Copy as plain text") { model.copy(clip, plain: true) }; Divider(); Button("Delete clip", role: .destructive) { model.remove(clip) } } label: { Image(systemName: "ellipsis").foregroundStyle(Color.muted) }.menuStyle(.borderlessButton).fixedSize().accessibilityLabel("Clip actions")
             }.padding(.bottom, 23)
             ScrollView {
