@@ -97,18 +97,18 @@ struct StashView: View {
                 chip("Pinned", kind: nil, pinned: true)
                 chip("Text", kind: .text)
                 chip("Links", kind: .link)
-                chip("Images", kind: .image)
                 chip("Screenshots", kind: .screenshot)
+                chip("Files", kind: .file)
                 Menu {
-                    ForEach([ClipKind.file, .email, .color, .video], id: \.self) { kind in
+                    ForEach([ClipKind.image, .email, .color, .video], id: \.self) { kind in
                         Button { model.selectFilter(kind) } label: { Label(kind.title, systemImage: kind.symbol) }
                     }
                 } label: {
-                    HStack(spacing: 4) { Text([ClipKind.file, .email, .color, .video].contains(model.category ?? .text) ? model.category!.title : "More"); Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold)) }
+                    HStack(spacing: 4) { Text([ClipKind.image, .email, .color, .video].contains(model.category ?? .text) ? model.category!.title : "More"); Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold)) }
                         .font(.system(size: 12, weight: .medium)).foregroundStyle(Color.muted)
                 }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
                     .padding(.horizontal, 8).padding(.vertical, 5)
-                    .background { pillBackground(active: [.file, .email, .color, .video].contains(model.category ?? .text)) }
+                    .background { pillBackground(active: [.image, .email, .color, .video].contains(model.category ?? .text)) }
                     .accessibilityLabel("More categories")
                 Spacer(minLength: 0)
                 if model.paused {

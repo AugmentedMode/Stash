@@ -190,7 +190,7 @@ final class AppModel: ObservableObject {
         history.insert(clip); selection = clip.id; deletedClip = nil; canUndoDelete = false; save(); message("Clip restored")
     }
     func cycleFilter(_ offset: Int) {
-        let choices: [(kind: ClipKind?, pinned: Bool)] = [(nil, false), (nil, true), (.text, false), (.link, false), (.image, false), (.screenshot, false), (.file, false), (.email, false), (.color, false), (.video, false)]
+        let choices: [(kind: ClipKind?, pinned: Bool)] = [(nil, false), (nil, true), (.text, false), (.link, false), (.screenshot, false), (.file, false), (.image, false), (.email, false), (.color, false), (.video, false)]
         let index = choices.firstIndex { $0.kind == category && $0.pinned == pinnedOnly } ?? 0
         let next = choices[(index + offset + choices.count) % choices.count]
         // Key repeats can arrive faster than the category spring settles.
