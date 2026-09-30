@@ -538,6 +538,8 @@ struct SettingsView: View {
             linkRow("ladybug", "Report a bug", "Tell us what went wrong", "issues/new/choose")
             SettingsDivider()
             linkRow("chevron.left.forwardslash.chevron.right", "Source code", "Stash is open source", "")
+            SettingsDivider()
+            ShareRow(model: model)
         }
         SettingsSection(
             title: "Energy",
@@ -718,4 +720,30 @@ enum AppInfo {
     static func icon(for bundleID: String) -> NSImage? {
         url(for: bundleID).map { NSWorkspace.shared.icon(forFile: $0.path) }
     }
+}
+
+/// Settings → About → Help: share Stash anytime, without waiting for the card.
+private struct ShareRow: View {
+    @ObservedObject var model: AppModel
+    @State private var anchor = NSView()
+    var body: some View {
+        Button {
+            let picker = NSSharingServicePicker(items: [AppModel.shareText, AppModel.shareURL])
+            picker.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
+        } label: {
+            SettingsRow(
+                icon: "square.and.arrow.up", tint: .accent, title: "Share Stash",
+                subtitle: "Send a link to a friend"
+            ) {
+                Image(systemName: "arrow.up.right").font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.quiet)
+            }.contentShape(Rectangle()).background(ShareAnchor(view: anchor))
+        }.buttonStyle(.plain)
+    }
+}
+
+private struct ShareAnchor: NSViewRepresentable {
+    let view: NSView
+    func makeNSView(context: Context) -> NSView { view }
+    func updateNSView(_ nsView: NSView, context: Context) {}
 }

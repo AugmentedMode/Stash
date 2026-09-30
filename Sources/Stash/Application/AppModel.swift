@@ -63,6 +63,15 @@ final class AppModel: ObservableObject {
     var supportsGrid: Bool { !promptsActive && (category == .image || category == .screenshot) }
     var gridActive: Bool { supportsGrid && imageGrid && !previewOpen }
 
+    /// The one-time "share Stash" card, shown after Stash has clearly helped. Counted on this Mac only.
+    @Published var showSharePrompt = false
+    var sharePrompt = SharePrompt() {
+        didSet {
+            if let data = try? JSONEncoder().encode(sharePrompt) { defaults.set(data, forKey: "sharePrompt") }
+        }
+    }
+    /// Old clips this person has brought back, for the share card's thank-you line.
+    var recalledCount: Int { sharePrompt.recalls }
     @Published var canUndoDelete = false
     private var deletedClip: Clip?
     @Published var toast: String?
@@ -239,6 +248,10 @@ final class AppModel: ObservableObject {
                 ($0 as NSString).expandingTildeInPath
             }) ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Desktop").path
         excluded = defaults.stringArray(forKey: "excluded") ?? ClipboardCodec.defaultExclusions.sorted()
+        sharePrompt =
+            defaults.data(forKey: "sharePrompt").flatMap {
+                try? JSONDecoder().decode(SharePrompt.self, from: $0)
+            } ?? SharePrompt()
         if demo {
             history = Self.examples()
         } else if !memoryOnly {
@@ -400,6 +413,35 @@ final class AppModel: ObservableObject {
 
         message("History cleared. Pinned clips kept.")
     }
+    /// Counts a clip brought back from history toward the share card, then decides
+    /// whether to show it the next time the palette opens.
+    func recordRecall(_ clip: Clip) {
+        guard !demo, let position = history.clips.firstIndex(where: { $0.id == clip.id }) else { return }
+        sharePrompt.recordRecall(position: position)
+    }
+    func refreshSharePrompt() {
+        showSharePrompt =
+            (demo && CommandLine.arguments.contains("--share-prompt")) || (!demo && sharePrompt.shouldShow())
+    }
+    static let shareURL = URL(string: "https://heystash.io/?ref=share")!
+    static let shareText = "I’ve been using Stash, a free clipboard manager for Mac. It’s great:"
+    func shareStash(from view: NSView?) {
+        let picker = NSSharingServicePicker(items: [Self.shareText, Self.shareURL])
+        if let view { picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY) }
+        finishSharePrompt()
+    }
+    func starStash() {
+        NSWorkspace.shared.open(URL(string: "https://github.com/AugmentedMode/Stash")!)
+        finishSharePrompt()
+    }
+    func finishSharePrompt() {
+        if !demo { sharePrompt.done() }
+        showSharePrompt = false
+    }
+    func snoozeSharePrompt() {
+        if !demo { sharePrompt.later() }
+        showSharePrompt = false
+    }
     @discardableResult func copy(_ clip: Clip, plain: Bool = false) -> Bool {
         if !plain, clip.fileURLs.contains(where: { !FileManager.default.fileExists(atPath: $0.path) }) {
             message("The original file was moved or deleted. Copy it again from Finder.")
@@ -409,6 +451,7 @@ final class AppModel: ObservableObject {
             message("This clip couldn’t be copied")
             return false
         }
+        recordRecall(clip)
         clipboard.skipCurrentChange()
         lastClipboardActivity = Date()
         message(plain ? "Copied as plain text" : "Copied to clipboard")

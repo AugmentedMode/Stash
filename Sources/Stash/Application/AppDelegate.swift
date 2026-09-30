@@ -111,6 +111,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
         model.destinationName = previousApp?.localizedName ?? "previous app"
         model.quickPasteReady = AXIsProcessTrusted()
+        model.refreshSharePrompt()
         NSApp.unhide(nil)
         NSApp.activate(ignoringOtherApps: true)
         // Activation is asynchronous. Order now, then restore key focus once
@@ -223,6 +224,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                     withTitle: "Check for Updates…", action: #selector(checkForUpdatesAction),
                     keyEquivalent: "")
             }
+            menu.addItem(withTitle: "Share Stash…", action: #selector(shareAction), keyEquivalent: "")
             menu.addItem(.separator())
             menu.addItem(
                 withTitle: "Quit Stash", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -239,6 +241,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc func openAction() { show() }
     @objc func pauseAction() { model.paused.toggle() }
     @objc func checkForUpdatesAction() { model.updates.checkForUpdates() }
+    @objc func shareAction() {
+        // The status item is the only view on screen when this menu is open.
+        let picker = NSSharingServicePicker(items: [AppModel.shareText, AppModel.shareURL])
+        if let button = status.button {
+            picker.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        }
+    }
     @objc func changeShortcutAction() {
         model.openShortcutSettings()
         show()

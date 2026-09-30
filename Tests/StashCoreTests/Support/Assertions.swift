@@ -32,6 +32,13 @@ func XCTAssertTrue(_ value: @autoclosure () throws -> Bool, file: String = #file
         fail(file, line, "Unexpected error: \(error)")
     }
 }
+func XCTAssertFalse(_ value: @autoclosure () throws -> Bool, file: String = #fileID, line: UInt = #line) {
+    do {
+        if try value() { fail(file, line, "Expected false") }
+    } catch {
+        fail(file, line, "Unexpected error: \(error)")
+    }
+}
 
 func XCTAssertNil<T>(
     _ value: @autoclosure () -> T?, _ message: String = "Expected nil",

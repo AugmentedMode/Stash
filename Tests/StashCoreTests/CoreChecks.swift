@@ -72,6 +72,12 @@ import AppKit
             ("StoreLeavesUnreadableDataUntouched", suite.testStoreLeavesUnreadableDataUntouched),
             ("StoreDropsImagesWhosePayloadIsMissing", suite.testStoreDropsImagesWhosePayloadIsMissing),
             ("EmptyDiskAndEmptyClipboard", suite.testEmptyDiskAndEmptyClipboard),
+            ("SharePromptWaitsForRealUse", suite.testSharePromptWaitsForRealUse),
+            ("SharePromptAsksAtMostTwice", suite.testSharePromptAsksAtMostTwice),
+            (
+                "SharePromptStopsAfterShareAndSurvivesRelaunch",
+                suite.testSharePromptStopsAfterShareAndSurvivesRelaunch
+            ),
         ]
         for (name, run) in tests {
             let before = failures
