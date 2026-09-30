@@ -1,21 +1,45 @@
 name: Bug report
 description: Report a reproducible problem in Stash.
+labels: [bug]
 body:
   - type: markdown
     attributes:
-      value: Use synthetic content. Do not attach real clipboard history, saved prompts, or credentials. Report vulnerabilities privately through Security.
+      value: |
+        Thanks for taking the time to report this. Use synthetic content only: do not attach real clipboard history, saved prompts, or credentials. Report vulnerabilities privately through [Security](https://github.com/AugmentedMode/Stash/security/advisories/new).
+  - type: input
+    id: version
+    attributes:
+      label: Stash version
+      description: Shown in Settings → About, or the commit if you built from source.
+      placeholder: "1.0.5"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install Stash?
+      options:
+        - Downloaded the DMG (heystash.io or GitHub Releases)
+        - Homebrew
+        - Built from source
+    validations:
+      required: true
   - type: input
     id: environment
     attributes:
-      label: Environment
-      description: macOS version, Apple silicon or Intel, and Stash commit/build.
+      label: macOS version and Mac
+      description: For example "macOS 15.3, MacBook Air M2". Downloads support Apple silicon only.
     validations:
       required: true
   - type: textarea
     id: reproduction
     attributes:
       label: Steps to reproduce
-      description: Include whether this happens in the real app or QA preview.
+      description: Include the app you copied from and whether this happens in the real app or the QA preview.
+      placeholder: |
+        1. Copy text from …
+        2. Press ⌘⇧V
+        3. …
     validations:
       required: true
   - type: textarea
@@ -24,3 +48,8 @@ body:
       label: Expected and actual behavior
     validations:
       required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or anything else
+      description: Optional. Please check that screenshots contain no personal clipboard content.

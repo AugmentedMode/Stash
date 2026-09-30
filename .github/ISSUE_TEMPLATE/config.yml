@@ -1,5 +1,11 @@
-blank_issues_enabled: true
+blank_issues_enabled: false
 contact_links:
+  - name: Questions and help
+    url: https://github.com/AugmentedMode/Stash/discussions/categories/q-a
+    about: Ask how something works or get help setting Stash up.
+  - name: Ideas and feedback
+    url: https://github.com/AugmentedMode/Stash/discussions/categories/ideas
+    about: Share ideas or general feedback before opening a feature request.
   - name: Security vulnerability
     url: https://github.com/AugmentedMode/Stash/security/advisories/new
     about: Report vulnerabilities privately; never include sensitive clipboard content in public issues.

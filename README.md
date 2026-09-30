@@ -5,7 +5,8 @@
 <h1 align="center">Stash</h1>
 
 <p align="center"><strong>A little more memory for your Mac.</strong><br>
-A free, open-source clipboard manager. Native to your Mac. Your history stays local.</p>
+A free, open-source clipboard manager. Native to your Mac. Your history stays local.<br>
+<a href="https://heystash.io">Try the live demo at heystash.io</a></p>
 
 <p align="center">
   <a href="https://github.com/AugmentedMode/Stash/actions/workflows/ci.yml"><img src="https://github.com/AugmentedMode/Stash/actions/workflows/ci.yml/badge.svg?branch=main" alt="Build and checks"></a>
@@ -15,7 +16,8 @@ A free, open-source clipboard manager. Native to your Mac. Your history stays lo
 </p>
 
 <p align="center">
-  <a href="https://github.com/AugmentedMode/Stash/releases/latest">Download for Mac</a> ·
+  <a href="https://heystash.io"><strong>heystash.io</strong></a> ·
+  <a href="https://heystash.io/download">Download for Mac</a> ·
   <a href="#get-started">Get started</a> ·
   <a href="docs/USAGE.md">User guide</a> ·
   <a href="CONTRIBUTING.md">Contribute</a> ·
