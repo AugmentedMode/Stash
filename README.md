@@ -5,7 +5,7 @@
 <h1 align="center">Stash</h1>
 
 <p align="center"><strong>A little more memory for your Mac.</strong><br>
-A native, keyboard-first home for everything you copy.</p>
+A free, open-source clipboard manager. Native to your Mac. Your history stays local.</p>
 
 <p align="center">
   <a href="https://github.com/AugmentedMode/Stash/actions/workflows/ci.yml"><img src="https://github.com/AugmentedMode/Stash/actions/workflows/ci.yml/badge.svg?branch=main" alt="Build and checks"></a>
@@ -30,6 +30,9 @@ A native, keyboard-first home for everything you copy.</p>
 Press **⌘⇧V**, find what you copied, and get back to work. Stash keeps text, links,
 images, screenshots, colors, and file references together in a small menu-bar app.
 Your history stays on your Mac: no account, cloud sync, analytics, or network requests.
+
+**Useful to you? [Star Stash on GitHub](https://github.com/AugmentedMode/Stash) to help others discover it.**
+Bug reports and contributions are welcome, too.
 
 ## What you can do
 
@@ -107,15 +110,15 @@ and no global shortcut. Its Copy action still writes to the system clipboard.
 
 ### Enable quick paste
 
-Automatic paste needs **Accessibility** permission. Open **Settings → Enable Quick
-Paste** and grant access in macOS. Without it, Stash copies the selected item and
+Automatic paste needs **Accessibility** permission. Open **Settings → General → Quick
+Paste → Enable** and grant access in macOS. Without it, Stash copies the selected item and
 returns to your previous app; press **⌘V** there.
 
 ## At your fingertips
 
 | Shortcut | Action |
 | :--- | :--- |
-| **⌘⇧V** | Show or hide Stash |
+| **⌘⇧V** | Show or hide Stash (change it in **Settings → General**) |
 | **↑ / ↓** | Select a clip |
 | **Return** | Paste the selected clip |
 | **⇧Return** | Paste without formatting |
@@ -123,6 +126,7 @@ returns to your previous app; press **⌘V** there.
 | **← / →** | Switch categories; use **⌥← / ⌥→** while searching |
 | **⌘P** | Pin or unpin a clip |
 | **⌘K** | Open clip actions |
+| **⌘O** | Go back to where the clip was copied |
 | **⌘Y** | Preview the selected clip |
 | **⌘⇧P** | Open saved prompts |
 | **⌘,** | Open Settings |
