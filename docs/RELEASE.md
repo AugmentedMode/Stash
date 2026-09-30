@@ -45,11 +45,26 @@ spctl --assess --type open --context context:primary-signature --verbose=2 dist/
 ```
 
 Stapling changes the DMG bytes: regenerate the checksum **after** stapling.
+
+## Update feed
+
+Installed apps read `releases/latest/download/appcast.xml`, so every release must
+include an `appcast.xml` asset. Create it **after** stapling the DMG, because the
+feed carries the DMG's EdDSA signature and length:
+
+```sh
+./scripts/make-appcast.sh
+```
+
+The signing key is in the maintainer's login Keychain (Sparkle account `stash`); its
+public half is `SUPublicEDKey` in `scripts/build-app.sh`. Keep an offline backup
+(`generate_keys --account stash -x <file>`). Without it, installed apps cannot
+accept new updates. Raise `CFBundleVersion` for every release: Sparkle compares it.
 Mount the final DMG read-only and verify the enclosed app's signature and ticket.
 
 ## Publish and verify
 
-Commit the exact source, tag its version, and publish the DMG and checksum on
+Commit the exact source, tag its version, and publish the DMG, checksum and `appcast.xml` on
 GitHub Releases with a link to that tag's source. Never replace an existing
 version's binary; publish a new version so source, tag, and checksum agree.
 Update `version` and `sha256` in `Casks/stash.rb` in
@@ -71,8 +86,9 @@ testing. Intel hardware is not tested and no Intel binary is distributed.
 
 Without `STASH_SIGN_IDENTITY`, these builds are ad-hoc signed and not notarized.
 The optional DMG Finder-layout helper uses `ds-store==1.3.1` and
-`mac-alias==2.2.2` installed under `.build/dmg-tools`. The app has no third-party
-runtime dependencies. Packaging includes only the app, Applications symlink,
+`mac-alias==2.2.2` installed under `.build/dmg-tools`. The app's only third-party
+runtime dependency is Sparkle, pinned in `Package.swift` and embedded in
+`Contents/Frameworks`. Packaging includes only the app, Applications symlink,
 hidden installer background and Finder layout metadata; never clipboard history or
 Application Support data.
 

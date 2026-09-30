@@ -3,7 +3,9 @@
 Stash has two Swift package modules. `StashCore` owns clipboard data, classification,
 search, retention, screenshots, and persistence. It uses macOS APIs and is not a
 cross-platform library. `Stash` owns the application lifecycle and SwiftUI views.
-Neither module makes network requests.
+`StashCore` makes no network requests. The app's only request is Sparkle's daily
+update check (`UpdateController`), which fetches `appcast.xml` from GitHub Releases
+and is disabled in preview and QA builds.
 
 ```text
 Sources/

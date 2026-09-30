@@ -29,7 +29,8 @@ A free, open-source clipboard manager. Native to your Mac. Your history stays lo
 
 Press **⌘⇧V**, find what you copied, and get back to work. Stash keeps text, links,
 images, screenshots, colors, and file references together in a small menu-bar app.
-Your history stays on your Mac: no account, cloud sync, analytics, or network requests.
+Your history stays on your Mac: no account, cloud sync, or analytics. The only network
+request is a daily update check to GitHub, which you can turn off in Settings.
 
 **Useful to you? [Star Stash on GitHub](https://github.com/AugmentedMode/Stash) to help others discover it.**
 Bug reports and contributions are welcome, too.
@@ -44,7 +45,8 @@ Bug reports and contributions are welcome, too.
 - **Choose what stays.** Pause capture, exclude apps, set retention, or keep clipboard history only for the current session.
 
 Built with **SwiftUI and AppKit**, with Liquid Glass on macOS 26 and native materials
-on earlier supported versions. The app has **no third-party runtime dependencies**.
+on earlier supported versions. Its only third-party dependency is
+[Sparkle](https://sparkle-project.org), for signed updates.
 
 ## Get started
 
@@ -137,12 +139,14 @@ See the [user guide](docs/USAGE.md) for screenshot setup, prompt fields, and the
 ## Your clipboard, on your Mac
 
 Stash stores data locally in `~/Library/Application Support/Stash/`. Clipboard
-history lives in `history.json`; explicitly saved prompts live in `prompts.json`.
-The directory and files have owner-only permissions. **They are plaintext JSON,
-not an encrypted vault.**
+history lives in `History/`: a small `index.json` with each clip's details and text,
+plus one file per clip in `History/payloads/` for images, rich text and file
+references. Explicitly saved prompts live in `prompts.json`. The directories and
+files have owner-only permissions. **They are unencrypted, not a vault.**
 
-- Unpinned clips expire after **30 days** by default. Choose 1, 7, 30, or 90 days, or keep them indefinitely.
-- History retains up to **500 unpinned clips / 200 MB**. Pins are exempt; individual copies above **20 MB** are skipped.
+- Unpinned clips expire after **30 days** by default. Choose 1, 7, 30, or 90 days, 1 year, or keep them indefinitely.
+- History retains up to **500 unpinned clips** by default (100 to 2,500 in Settings) and **200 MB**. Pins are exempt; individual copies above **20 MB** are skipped.
+- Updates are checked once a day against a feed on GitHub Releases and verified with an EdDSA signature before installing. The check sends no clipboard data or identifiers; turn it off in **Settings → About**.
 - Session-only mode clears saved clipboard history and discards current clips—including pins—on quit. Saved prompts remain separate.
 - Sensitive clipboard markers and common password-manager apps are excluded. **Unmarked secrets from other apps can still enter history.** Add app exclusions or pause capture when needed.
 - File clips reference the originals. Moving or deleting a file can make its clip unavailable.

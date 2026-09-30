@@ -5,6 +5,13 @@
 Stash's original application source and category artwork are GPL-3.0-only. The
 repository's `LICENSE` contains the complete license text.
 
+## Sparkle
+
+Stash embeds [Sparkle](https://sparkle-project.org) 2.10.0 in
+`Contents/Frameworks` for signed update checks. Sparkle is distributed under an
+MIT-style license and includes components under their own licenses. The complete
+text ships in the app as `Contents/Resources/Sparkle-LICENSE.txt`.
+
 ## Service names and icons
 
 Service icons in `Sources/Stash/Resources/ServiceIcons` identify link destinations
