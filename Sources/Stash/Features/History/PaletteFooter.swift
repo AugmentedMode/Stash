@@ -104,6 +104,15 @@ struct PaletteFooter: View {
                     }
                     .disabled(model.selected == nil).help("Actions for the selected clip · ⌘K")
                     .accessibilityLabel("Open clip actions")
+                    if let clip = model.selected, let destination = model.sourceDestination(for: clip) {
+                        Button {
+                            model.goToSource(clip)
+                        } label: {
+                            hint("⌘O", destination.label)
+                        }
+                        .help("Go back to where this was copied · ⌘O")
+                        .accessibilityLabel("Go to where the selected clip was copied")
+                    }
                     Spacer(minLength: 0)
                     Button {
                         model.hidePanel?()

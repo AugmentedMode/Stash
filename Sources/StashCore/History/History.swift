@@ -41,6 +41,8 @@ public struct History: Codable {
             existing.sourceName = clip.sourceName
 
             existing.sourceBundle = clip.sourceBundle
+            existing.sourceTitle = clip.sourceTitle
+            existing.sourceURL = clip.sourceURL
             clips.insert(existing, at: 0)
         } else {
             clips.insert(clip, at: 0)

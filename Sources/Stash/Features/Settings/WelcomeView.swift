@@ -38,10 +38,7 @@ struct WelcomeView: View {
             Spacer()
             HStack(spacing: 7) {
                 Text("Always one shortcut away").foregroundStyle(Color.muted)
-                KeyCap(text: "⌘")
-
-                KeyCap(text: "⇧")
-                KeyCap(text: "V")
+                ForEach(model.shortcut.symbols, id: \.self) { KeyCap(text: $0) }
             }.font(.system(size: 12)).padding(.bottom, 24)
         }.frame(maxWidth: .infinity).padding(.top, 22)
     }

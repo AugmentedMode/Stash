@@ -111,7 +111,7 @@ struct ClipListView: View {
         if model.category != nil { return "New copies appear here automatically. You can also look in All." }
         return model.paused
             ? "Resume capture below to start collecting new copies."
-            : "Copy something in any app, then press ⌘⇧V."
+            : "Copy something in any app, then press \(model.shortcut.display)."
     }
     func groupLabel(at index: Int) -> String? {
         let clips = model.results

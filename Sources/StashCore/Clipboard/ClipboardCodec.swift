@@ -14,8 +14,10 @@ public enum ClipboardCodec {
         "com.1password.1password", "com.agilebits.onepassword7", "com.bitwarden.desktop",
         "com.apple.Passwords", "com.apple.keychainaccess", "com.dashlane.Dashlane", "org.keepassxc.keepassxc",
     ]
+    /// Chromium browsers (Chrome, Arc, Brave, Edge) tag copies with the page they came from.
+    public static let chromiumSourceURLType = "org.chromium.source-url"
     public static func capture(
-        _ board: NSPasteboard, sourceName: String, sourceBundle: String,
+        _ board: NSPasteboard, sourceName: String, sourceBundle: String, sourceTitle: String? = nil,
         excluded: Set<String> = defaultExclusions
     ) -> Clip? {
         guard !excluded.contains(sourceBundle) else { return nil }
@@ -69,7 +71,22 @@ public enum ClipboardCodec {
         }
         guard !text.isEmpty || kind == .image else { return nil }
         return Clip(
-            sourceName: sourceName, sourceBundle: sourceBundle, kind: kind, text: text, items: payload)
+            sourceName: sourceName, sourceBundle: sourceBundle, kind: kind, text: text, items: payload,
+            sourceTitle: cleanedTitle(sourceTitle, appName: sourceName), sourceURL: sourceURL(from: board))
+    }
+    /// Only web pages are kept, and never the source URL's own payload on restore.
+    static func sourceURL(from board: NSPasteboard) -> String? {
+        guard let value = board.string(forType: NSPasteboard.PasteboardType(chromiumSourceURLType)),
+            let url = URL(string: value.trimmingCharacters(in: .whitespacesAndNewlines)),
+            ["http", "https"].contains(url.scheme?.lowercased() ?? ""), url.host != nil
+        else { return nil }
+        return String(url.absoluteString.prefix(2048))
+    }
+    static func cleanedTitle(_ title: String?, appName: String) -> String? {
+        guard let title = title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty,
+            title != appName
+        else { return nil }
+        return String(title.prefix(200))
     }
     @discardableResult public static func restore(
         _ clip: Clip, to board: NSPasteboard, plainText: Bool = false

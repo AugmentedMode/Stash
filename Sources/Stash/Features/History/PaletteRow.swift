@@ -21,13 +21,13 @@ struct PaletteRow: View {
                 ).foregroundStyle(.white.opacity(selected ? 1 : 0.9)).lineLimit(1)
                 HStack(spacing: 5) {
                     SourceAppIcon(clip: clip)
-                    HighlightedText(value: clip.sourceName, query: query)
-                    if let link = clip.linkPresentation {
+                    HighlightedText(value: clip.sourceName, query: query).layoutPriority(1)
+                    if let context = clip.linkPresentation?.host ?? clip.sourceContext {
                         Text("·")
-                        HighlightedText(value: link.host, query: query)
+                        HighlightedText(value: context, query: query).truncationMode(.tail)
                     }
                     Text("·").opacity(0.7)
-                    Text(clip.createdAt.formatted(date: .omitted, time: .shortened))
+                    Text(clip.createdAt.formatted(date: .omitted, time: .shortened)).layoutPriority(1)
                     PinGlyph(pinned: clip.pinned).font(.system(size: 9)).opacity(clip.pinned ? 1 : 0).padding(
                         .leading, 2)
                 }.font(.system(size: 11)).foregroundStyle(Color.quiet).lineLimit(1)

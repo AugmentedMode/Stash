@@ -3,7 +3,7 @@ import SwiftUI
 import StashCore
 
 enum ClipAction: String, Identifiable {
-    case paste, copy, plainText, savePrompt, preview, pin, rename, openLink, revealFile, delete
+    case paste, copy, plainText, savePrompt, preview, pin, rename, openSource, openLink, revealFile, delete
     var id: String { rawValue }
     var symbol: String {
         switch self {
@@ -14,6 +14,7 @@ enum ClipAction: String, Identifiable {
         case .preview: return "eye"
         case .pin: return "pin"
         case .rename: return "pencil"
+        case .openSource: return "arrow.uturn.backward"
         case .openLink: return "arrow.up.right"
         case .revealFile: return "folder"
         case .delete: return "trash"
@@ -28,6 +29,9 @@ enum ClipAction: String, Identifiable {
         case .preview: return "Preview"
         case .pin: return clip.pinned ? "Unpin" : "Pin"
         case .rename: return "Rename in Stash…"
+        case .openSource:
+            if let host = clip.sourceHost { return "Go to source · \(host)" }
+            return "Go to source · \(clip.sourceName)"
         case .openLink: return "Open link"
         case .revealFile: return "Reveal in Finder"
         case .delete: return "Delete clip"

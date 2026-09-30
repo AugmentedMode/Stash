@@ -5,6 +5,21 @@ import StashCore
 
 extension AppDelegate {
     func handle(_ event: NSEvent) -> NSEvent? {
+        if model.recordingShortcut, panel.isKeyWindow {
+            recordShortcut(event)
+            return nil
+        }
+        if model.settingsOpen, panel.isKeyWindow, panel.attachedSheet == nil {
+            if event.keyCode == 53 {
+                model.settingsOpen = false
+                return nil
+            }
+            if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "w" {
+                dismiss()
+                return nil
+            }
+            return event
+        }
         guard panel.isKeyWindow, !model.settingsOpen, model.started else { return event }
         let cmd = event.modifierFlags.contains(.command)
         if model.promptsActive {
@@ -172,6 +187,11 @@ extension AppDelegate {
         }
         if cmd, event.charactersIgnoringModifiers == "p", let clip = model.selected {
             model.togglePin(clip)
+            return nil
+        }
+        if cmd, event.charactersIgnoringModifiers == "o", let clip = model.selected, model.canGoToSource(clip)
+        {
+            model.goToSource(clip)
             return nil
         }
         if cmd, event.keyCode == 51, let clip = model.selected {

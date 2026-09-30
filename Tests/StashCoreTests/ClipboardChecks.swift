@@ -146,3 +146,57 @@ extension StashCoreTests {
         XCTAssertNil(ClipboardCodec.capture(source, sourceName: "Test", sourceBundle: "test"))
     }
 }
+extension StashCoreTests {
+    func testCaptureKeepsWhereTheCopyCameFrom() {
+        let source = board()
+        let destination = board()
+        defer {
+            source.releaseGlobally()
+            destination.releaseGlobally()
+        }
+        let item = NSPasteboardItem()
+        item.setString("alias claude-sec", forType: .string)
+        item.setString(
+            "https://www.example.com/docs?q=1", forType: .init(ClipboardCodec.chromiumSourceURLType))
+        source.writeObjects([item])
+        let clip = ClipboardCodec.capture(
+            source, sourceName: "Arc", sourceBundle: "company.thebrowser.Browser",
+            sourceTitle: "  Setup guide  ")!
+        XCTAssertEqual(clip.sourceTitle, "Setup guide")
+        XCTAssertEqual(clip.sourceURL, "https://www.example.com/docs?q=1")
+        XCTAssertEqual(clip.sourceHost, "example.com")
+        XCTAssertEqual(clip.sourceContext, "Setup guide")
+        XCTAssertTrue(clip.matches("setup guide"))
+        XCTAssertTrue(clip.matches("example.com"))
+        // Provenance is metadata only: it is not pasted back out.
+        ClipboardCodec.restore(clip, to: destination)
+        XCTAssertNil(destination.string(forType: .init(ClipboardCodec.chromiumSourceURLType)))
+    }
+    func testCaptureIgnoresUnsafeOrRedundantSources() {
+        let source = board()
+        defer { source.releaseGlobally() }
+        let item = NSPasteboardItem()
+        item.setString("hello", forType: .string)
+        item.setString("javascript:alert(1)", forType: .init(ClipboardCodec.chromiumSourceURLType))
+        source.writeObjects([item])
+        let clip = ClipboardCodec.capture(
+            source, sourceName: "Slack", sourceBundle: "test", sourceTitle: "Slack")!
+        XCTAssertNil(clip.sourceURL)
+        XCTAssertNil(clip.sourceTitle)
+        XCTAssertNil(clip.sourceContext)
+    }
+    func testRecopyUpdatesSourceAndOldHistoryDecodes() throws {
+        var history = History()
+        history.insert(Clip(sourceName: "Arc", kind: .text, text: "same", sourceTitle: "Old page"))
+        history.insert(Clip(sourceName: "Slack", kind: .text, text: "same", sourceTitle: "#general"))
+        XCTAssertEqual(history.clips.count, 1)
+        XCTAssertEqual(history.clips[0].sourceTitle, "#general")
+        let legacy = """
+            {"id":"\(UUID().uuidString)","createdAt":0,"sourceName":"Notes","sourceBundle":"","kind":"text",
+            "text":"old","pinned":false,"items":[],"fingerprint":"x"}
+            """
+        let clip = try JSONDecoder().decode(Clip.self, from: Data(legacy.utf8))
+        XCTAssertNil(clip.sourceTitle)
+        XCTAssertNil(clip.sourceURL)
+    }
+}

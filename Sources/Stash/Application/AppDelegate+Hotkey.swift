@@ -19,12 +19,42 @@ extension AppDelegate {
             model.shortcutIssue = "The keyboard shortcut could not start. Open Stash from the menu bar."
             return
         }
-        let result = RegisterEventHotKey(
-            UInt32(kVK_ANSI_V), UInt32(cmdKey | shiftKey), EventHotKeyID(signature: 0x53545348, id: 1),
-            GetApplicationEventTarget(), 0, &hotKey)
-        if result != noErr {
-            model.shortcutIssue =
-                "⌘⇧V is unavailable. Another app or another copy of Stash may be using it. Open Stash from the menu bar."
+        registerHotkey()
+    }
+    /// Re-registers after the shortcut changes. Recording releases it so the old combo can be typed.
+    func registerHotkey() {
+        if let hotKey {
+            UnregisterEventHotKey(hotKey)
+            self.hotKey = nil
         }
+        guard hotKeyHandler != nil, !model.recordingShortcut else { return }
+        let shortcut = model.shortcut
+        let result = RegisterEventHotKey(
+            shortcut.keyCode, shortcut.modifiers, EventHotKeyID(signature: 0x53545348, id: 1),
+            GetApplicationEventTarget(), 0, &hotKey)
+        model.shortcutIssue =
+            result == noErr
+            ? nil
+            : "\(shortcut.display) is already used by another app. Choose a different shortcut."
+    }
+    /// Captures the next key press while the shortcut field is recording.
+    func recordShortcut(_ event: NSEvent) {
+        if event.keyCode == UInt16(kVK_Escape) {
+            model.recordingShortcut = false
+            return
+        }
+        if [kVK_Delete, kVK_ForwardDelete].contains(Int(event.keyCode)),
+            event.modifierFlags.intersection([.command, .option, .control]).isEmpty
+        {
+            model.shortcut = .standard
+            model.recordingShortcut = false
+            return
+        }
+        guard let shortcut = HotkeyShortcut(event: event) else {
+            NSSound.beep()
+            return
+        }
+        model.shortcut = shortcut
+        model.recordingShortcut = false
     }
 }

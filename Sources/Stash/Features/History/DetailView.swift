@@ -100,6 +100,15 @@ struct DetailView: View {
                     SourceAppIcon(clip: clip)
                     Text(clip.sourceName).foregroundStyle(Color.muted)
                 }.font(.system(size: 11))
+                if let title = clip.sourceTitle { meta("Window", title) }
+                if let page = clip.sourceURL, let url = URL(string: page) {
+                    HStack {
+                        Text("Page").foregroundStyle(Color.muted)
+                        Spacer()
+                        Link(clip.sourceHost ?? page, destination: url).foregroundStyle(Color.accent)
+                            .lineLimit(1).help(page)
+                    }.font(.system(size: 11))
+                }
                 meta("Added", clip.createdAt.formatted(date: .abbreviated, time: .shortened))
                 meta(
                     "Content",

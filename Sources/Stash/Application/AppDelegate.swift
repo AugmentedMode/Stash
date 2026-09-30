@@ -23,6 +23,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         model.showPanel = { [weak self] in self?.show() }
         model.hidePanel = { [weak self] in self?.dismiss() }
         model.onPaste = { [weak self] clip, plain in self?.paste(clip, plain: plain) }
+        model.onShortcutChange = { [weak self] in self?.registerHotkey() }
+        if demo, let index = CommandLine.arguments.firstIndex(of: "--settings") {
+            model.settingsOpen = true
+            model.requestedSettingsTab = CommandLine.arguments.dropFirst(index + 1).first
+        }
         panel = PanelFactory.make(model: model)
         panel.delegate = self
         panel.center()
@@ -70,6 +75,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         main.addItem(edit)
         NSApp.mainMenu = main
         show()
+        if demo, let index = CommandLine.arguments.firstIndex(of: "--snapshot"),
+            let path = CommandLine.arguments.dropFirst(index + 1).first
+        {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                self?.writeSnapshot(to: URL(fileURLWithPath: path))
+                NSApp.terminate(nil)
+            }
+        }
     }
     func show() {
         if model.settingsOpen, panel.isVisible {
@@ -132,26 +145,60 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func applicationDidBecomeActive(_ notification: Notification) { finishPresentation() }
     func applicationDidResignActive(_ notification: Notification) {
         DispatchQueue.main.async { [weak self] in
-            guard let self, !NSApp.isActive, !self.presentationPending,
-                !self.model.settingsOpen
-            else { return }
+            guard let self, !NSApp.isActive, !self.presentationPending else { return }
+            // Stay visible while the user grants a permission in System Settings, then come back.
+            if self.model.settingsOpen,
+                NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.systempreferences"
+            {
+                return
+            }
+            self.model.recordingShortcut = false
             self.model.previewOpen = false
             self.panel.orderOut(nil)
         }
     }
     func togglePanel() {
-        if model.settingsOpen {
-            show()
-            return
-        }
         if panel.isVisible && panel.isKeyWindow && NSApp.isActive { dismiss() } else { show() }
     }
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         show()
         return true
     }
+    /// Renders the panel for documentation and visual review without Screen Recording access.
+    func writeSnapshot(to url: URL) {
+        func hosting(in view: NSView) -> NSView? {
+            if String(describing: type(of: view)).contains("HostingView") { return view }
+            return view.subviews.lazy.compactMap(hosting(in:)).first
+        }
+        guard let root = panel.contentView, let view = hosting(in: root), let layer = view.layer else {
+            return
+        }
+        let scale = panel.backingScaleFactor
+        let size = view.bounds.size
+        guard
+            let context = CGContext(
+                data: nil, width: Int(size.width * scale), height: Int(size.height * scale),
+                bitsPerComponent: 8,
+                bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return }
+        context.scaleBy(x: scale, y: scale)
+        // Stand-in for the desktop blur behind the glass.
+        context.setFillColor(CGColor(gray: 0.19, alpha: 1))
+        context.addPath(CGPath(roundedRect: view.bounds, cornerWidth: 24, cornerHeight: 24, transform: nil))
+        context.fillPath()
+        if view.isFlipped {
+            context.translateBy(x: 0, y: size.height)
+            context.scaleBy(x: 1, y: -1)
+        }
+        layer.render(in: context)
+        guard let image = context.makeImage() else { return }
+        let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
+        try? png?.write(to: url)
+    }
     func dismiss() {
         presentationPending = false
+        model.recordingShortcut = false
         model.previewOpen = false
         panel.orderOut(nil)
         if let previousApp, !previousApp.isTerminated { previousApp.activate(options: []) }

@@ -12,13 +12,15 @@ public final class ClipboardObserver {
     public var hasChanges: Bool { board.changeCount != lastChange }
     public func skipCurrentChange() { lastChange = board.changeCount }
     public func read(
-        sourceName: String, sourceBundle: String, excluded: Set<String> = ClipboardCodec.defaultExclusions,
+        sourceName: String, sourceBundle: String, sourceTitle: String? = nil,
+        excluded: Set<String> = ClipboardCodec.defaultExclusions,
         paused: Bool = false
     ) -> Clip? {
         guard board.changeCount != lastChange else { return nil }
         lastChange = board.changeCount
         guard !paused else { return nil }
         return ClipboardCodec.capture(
-            board, sourceName: sourceName, sourceBundle: sourceBundle, excluded: excluded)
+            board, sourceName: sourceName, sourceBundle: sourceBundle, sourceTitle: sourceTitle,
+            excluded: excluded)
     }
 }

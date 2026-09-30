@@ -7,6 +7,10 @@ public struct Clip: Codable, Identifiable, Equatable {
     public var createdAt: Date
     public var sourceName: String
     public var sourceBundle: String
+    /// Focused window title at copy time, such as a Slack channel or Terminal tab.
+    public var sourceTitle: String?
+    /// Page the copy came from, when a browser reports one.
+    public var sourceURL: String?
     public let kind: ClipKind
     public let text: String
     public var customTitle: String?
@@ -16,13 +20,15 @@ public struct Clip: Codable, Identifiable, Equatable {
     public init(
         id: UUID = UUID(), createdAt: Date = Date(), sourceName: String, sourceBundle: String = "",
         kind: ClipKind, text: String, pinned: Bool = false, items: [[String: Data]] = [],
-        customTitle: String? = nil
+        customTitle: String? = nil, sourceTitle: String? = nil, sourceURL: String? = nil
     ) {
         self.id = id
         self.createdAt = createdAt
         self.sourceName = sourceName
 
         self.sourceBundle = sourceBundle
+        self.sourceTitle = sourceTitle
+        self.sourceURL = sourceURL
         self.kind = kind
         self.text = text
         self.pinned = pinned
@@ -33,6 +39,15 @@ public struct Clip: Codable, Identifiable, Equatable {
     }
     public var title: String {
         text.split(maxSplits: 1, whereSeparator: \.isNewline).first.map(String.init) ?? kind.title
+    }
+    public var sourceHost: String? {
+        guard let sourceURL, let host = URL(string: sourceURL)?.host else { return nil }
+        return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
+    }
+    /// The most specific place the copy came from, for the row's details line.
+    public var sourceContext: String? {
+        if let sourceTitle, !sourceTitle.isEmpty { return sourceTitle }
+        return sourceHost
     }
     public var byteCount: Int { items.reduce(0) { $0 + $1.values.reduce(0) { $0 + $1.count } } }
     private static func makeFingerprint(kind: ClipKind, text: String, items: [[String: Data]]) -> String {
@@ -71,7 +86,8 @@ public struct Clip: Codable, Identifiable, Equatable {
     public func matches(_ query: SearchQuery) -> Bool {
         guard !query.isEmpty else { return true }
         let searchable =
-            (customTitle ?? "") + " " + text + " " + sourceName + " " + kind.title + " "
+            (customTitle ?? "") + " " + text + " " + sourceName + " " + (sourceTitle ?? "") + " "
+            + (sourceURL ?? "") + " " + kind.title + " "
             + (linkPresentation.map { $0.title + " " + $0.label } ?? "")
         return query.matches(searchable)
     }

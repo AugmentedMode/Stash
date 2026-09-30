@@ -15,7 +15,21 @@ final class AppModel: ObservableObject {
     @Published var destinationName = "previous app"
     @Published var quickPasteReady = false
     @Published var shortcutIssue: String?
+    @Published var shortcut: HotkeyShortcut {
+        didSet {
+            guard shortcut != oldValue else { return }
+            if let data = try? JSONEncoder().encode(shortcut) { defaults.set(data, forKey: "shortcut") }
+            onShortcutChange?()
+        }
+    }
+    /// While true, the next key press becomes the shortcut and the current one is released.
+    @Published var recordingShortcut = false {
+        didSet { if recordingShortcut != oldValue { onShortcutChange?() } }
+    }
+    var onShortcutChange: (() -> Void)?
     var screenshotSettingsRequested = false
+    /// Preview builds can open a settings tab directly with `--settings <tab>`.
+    var requestedSettingsTab: String?
     @Published var promptsActive = false
     @Published var promptSelection: UUID?
     @Published var promptDetailOpen = false
@@ -54,6 +68,26 @@ final class AppModel: ObservableObject {
         didSet {
             defaults.set(memoryOnly, forKey: "memoryOnly")
             save(immediately: true)
+        }
+    }
+    @Published var historyLimit: Int {
+        didSet {
+            defaults.set(historyLimit, forKey: "historyLimit")
+            history.enforceLimits(count: historyLimit)
+            reconcileSelection()
+            save()
+        }
+    }
+    /// Window titles and page addresses saved with each clip. Turning it off erases them.
+    @Published var rememberSourceDetails: Bool {
+        didSet {
+            defaults.set(rememberSourceDetails, forKey: "rememberSourceDetails")
+            guard !rememberSourceDetails, oldValue else { return }
+            for index in history.clips.indices {
+                history.clips[index].sourceTitle = nil
+                history.clips[index].sourceURL = nil
+            }
+            save()
         }
     }
     @Published var excluded: [String] { didSet { defaults.set(excluded, forKey: "excluded") } }
@@ -103,7 +137,7 @@ final class AppModel: ObservableObject {
             folder: URL(fileURLWithPath: screenshotFolder),
             receive: { [weak self] clip in
                 guard let self, self.screenshotGeneration == generation else { return }
-                self.history.insert(clip)
+                self.history.insert(clip, limit: self.historyLimit)
                 self.save()
                 if self.selection == nil { self.selection = self.results.first?.id }
                 // Do not overwrite a copy made while this image was being prepared.
@@ -169,6 +203,13 @@ final class AppModel: ObservableObject {
         imageGrid = defaults.object(forKey: "imageGrid") as? Bool ?? true
         started = demo || defaults.bool(forKey: "started")
         retention = defaults.object(forKey: "retention") as? Int ?? 30
+        historyLimit = defaults.object(forKey: "historyLimit") as? Int ?? 500
+        rememberSourceDetails = defaults.object(forKey: "rememberSourceDetails") as? Bool ?? true
+        shortcut =
+            defaults.data(forKey: "shortcut").flatMap {
+                try? JSONDecoder().decode(HotkeyShortcut.self, from: $0)
+            }
+            ?? .standard
         memoryOnly = defaults.bool(forKey: "memoryOnly")
         screenshotsEnabled = defaults.bool(forKey: "screenshotsEnabled")
         screenshotAutoCopy = defaults.object(forKey: "screenshotAutoCopy") as? Bool ?? true
@@ -231,9 +272,13 @@ final class AppModel: ObservableObject {
         guard
             let clip = clipboard.read(
                 sourceName: app?.localizedName ?? "Unknown app", sourceBundle: app?.bundleIdentifier ?? "",
+                sourceTitle: paused || !rememberSourceDetails || ignored.contains(app?.bundleIdentifier ?? "")
+                    ? nil : FocusedWindow.title(of: app),
                 excluded: ignored, paused: paused)
         else { return }
-        history.insert(clip)
+        var captured = clip
+        if !rememberSourceDetails { captured.sourceURL = nil }
+        history.insert(captured, limit: historyLimit)
         save()
         if selection == nil { selection = results.first?.id }
     }
@@ -298,7 +343,7 @@ final class AppModel: ObservableObject {
     }
     func undoDelete() {
         guard let clip = deletedClip else { return }
-        history.insert(clip)
+        history.insert(clip, limit: historyLimit)
         selection = clip.id
         deletedClip = nil
         canUndoDelete = false
@@ -379,5 +424,15 @@ final class AppModel: ObservableObject {
             return
         }
         if !excluded.contains(id) { excluded.append(id) }
+    }
+    var historyFileSize: Int64? {
+        guard !memoryOnly else { return nil }
+        return (try? FileManager.default.attributesOfItem(atPath: diskURL.path)[.size] as? NSNumber)?
+            .int64Value
+    }
+    static var version: String {
+        let info = Bundle.main.infoDictionary
+        guard let short = info?["CFBundleShortVersionString"] as? String else { return "Development build" }
+        return "Version \(short)"
     }
 }
