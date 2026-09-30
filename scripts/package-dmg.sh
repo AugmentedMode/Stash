@@ -13,17 +13,34 @@ archs=$(lipo -archs "$app/Contents/MacOS/Stash")
 architecture="${archs// /-}"
 mkdir -p dist
 stage=$(mktemp -d "$PWD/dist/.dmg-stage.XXXXXX")
-trap 'rm -rf "$stage"' EXIT
-/usr/bin/ditto "$app" "$stage/Stash.app"
-ln -s /Applications "$stage/Applications"
-cp docs/Start-here.txt "$stage/Start here.txt"
-if PYTHONPATH="$PWD/.build/dmg-tools" python3 -c 'import ds_store' 2>/dev/null; then
-  PYTHONPATH="$PWD/.build/dmg-tools" python3 scripts/dmg-layout.py "$stage"
+mountpoint="$stage/mounted"
+cleanup() {
+  if [[ -d "$mountpoint" ]] && mount | grep -Fq " on $mountpoint "; then
+    hdiutil detach "$mountpoint" || return
+  fi
+  rm -rf "$stage"
+}
+trap cleanup EXIT
+payload="$stage/payload"
+mkdir -p "$payload"
+/usr/bin/ditto "$app" "$payload/Stash.app"
+ln -s /Applications "$payload/Applications"
+output="dist/Stash-${version}-${architecture}.dmg"
+if PYTHONPATH="$PWD/.build/dmg-tools" python3 -c 'import ds_store, mac_alias' 2>/dev/null; then
+  mkdir -p "$payload/.background"
+  swift scripts/make-dmg-background.swift "$payload/.background/installer.png"
+  hdiutil create -volname 'Install Stash' -srcfolder "$payload" -fs HFS+ -format UDRW "$stage/layout.dmg"
+  mkdir -p "$mountpoint"
+  hdiutil attach "$stage/layout.dmg" -readwrite -nobrowse -mountpoint "$mountpoint"
+  # Create the background alias on the mounted image, so it refers to the
+  # distributed volume instead of a temporary folder on the build Mac.
+  PYTHONPATH="$PWD/.build/dmg-tools" python3 scripts/dmg-layout.py "$mountpoint"
+  hdiutil detach "$mountpoint"
+  hdiutil convert "$stage/layout.dmg" -format UDZO -imagekey zlib-level=9 -ov -o "$output"
 else
   print 'Optional Finder layout helper missing; packaging standard folder layout.'
+  hdiutil create -volname 'Install Stash' -srcfolder "$payload" -fs HFS+ -format UDZO -imagekey zlib-level=9 -ov "$output"
 fi
-output="dist/Stash-${version}-${architecture}.dmg"
-hdiutil create -volname 'Stash — Drag to Applications' -srcfolder "$stage" -fs HFS+ -format UDZO -imagekey zlib-level=9 -ov "$output"
 if [[ -n "${STASH_SIGN_IDENTITY:-}" ]]; then
   codesign --force --timestamp --sign "$STASH_SIGN_IDENTITY" "$output"
 fi

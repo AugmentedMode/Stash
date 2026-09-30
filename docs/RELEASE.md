@@ -73,7 +73,7 @@ Without `STASH_SIGN_IDENTITY`, these builds are ad-hoc signed and not notarized.
 The optional DMG Finder-layout helper uses `ds-store==1.3.1` and
 `mac-alias==2.2.2` installed under `.build/dmg-tools`. The app has no third-party
 runtime dependencies. Packaging includes only the app, Applications symlink,
-getting-started guide, and Finder layout metadata; never clipboard history or
+hidden installer background and Finder layout metadata; never clipboard history or
 Application Support data.
 
 ## Source and licensing
