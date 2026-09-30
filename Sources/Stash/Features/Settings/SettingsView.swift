@@ -728,8 +728,7 @@ private struct ShareRow: View {
     @State private var anchor = NSView()
     var body: some View {
         Button {
-            let picker = NSSharingServicePicker(items: [AppModel.shareText, AppModel.shareURL])
-            picker.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
+            model.showShareMenu(from: anchor)
         } label: {
             SettingsRow(
                 icon: "square.and.arrow.up", tint: .accent, title: "Share Stash",

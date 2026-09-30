@@ -243,10 +243,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc func checkForUpdatesAction() { model.updates.checkForUpdates() }
     @objc func shareAction() {
         // The status item is the only view on screen when this menu is open.
-        let picker = NSSharingServicePicker(items: [AppModel.shareText, AppModel.shareURL])
-        if let button = status.button {
-            picker.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-        }
+        model.showShareMenu(from: status.button)
     }
     @objc func changeShortcutAction() {
         model.openShortcutSettings()
