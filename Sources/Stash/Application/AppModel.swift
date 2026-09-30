@@ -425,10 +425,20 @@ final class AppModel: ObservableObject {
     }
     static let shareURL = URL(string: "https://heystash.io/?ref=share")!
     static let shareText = "I’ve been using Stash, a free clipboard manager for Mac. It’s great:"
+    /// Keeps the card (and the view the menu points at) on screen until the share
+    /// menu closes; removing it while the menu opens breaks both.
+    private var shareDelegate: ShareMenuDelegate?
     func shareStash(from view: NSView?) {
+        guard let view, view.window != nil else { return }
         let picker = NSSharingServicePicker(items: [Self.shareText, Self.shareURL])
-        if let view { picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY) }
-        finishSharePrompt()
+        let delegate = ShareMenuDelegate { [weak self] shared in
+            guard let self else { return }
+            if shared { self.finishSharePrompt() }
+            self.shareDelegate = nil
+        }
+        shareDelegate = delegate
+        picker.delegate = delegate
+        picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
     }
     func starStash() {
         NSWorkspace.shared.open(URL(string: "https://github.com/AugmentedMode/Stash")!)
@@ -497,5 +507,14 @@ final class AppModel: ObservableObject {
         let info = Bundle.main.infoDictionary
         guard let short = info?["CFBundleShortVersionString"] as? String else { return "Development build" }
         return "Version \(short)"
+    }
+}
+
+/// Reports whether the person picked a way to share or closed the menu.
+final class ShareMenuDelegate: NSObject, NSSharingServicePickerDelegate {
+    private let done: (Bool) -> Void
+    init(done: @escaping (Bool) -> Void) { self.done = done }
+    func sharingServicePicker(_ picker: NSSharingServicePicker, didChoose service: NSSharingService?) {
+        DispatchQueue.main.async { self.done(service != nil) }
     }
 }

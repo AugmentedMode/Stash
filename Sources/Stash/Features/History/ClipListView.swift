@@ -36,11 +36,12 @@ struct ClipListView: View {
                     ScrollView {
                         LazyVStack(spacing: 3) {
                             let selectedID = model.selected?.id
-                            ForEach(Array(model.results.enumerated()), id: \.element.id) { index, clip in
+                            let clips = model.results
+                            ForEach(Array(clips.enumerated()), id: \.element.id) { index, clip in
                                 // A single stable child per item prevents repeated lazy
                                 // placement when a date heading appears or disappears.
                                 VStack(spacing: 3) {
-                                    if let label = groupLabel(at: index) {
+                                    if let label = groupLabel(at: index, in: clips) {
                                         HStack(spacing: 6) {
                                             if clip.pinned {
                                                 Image(systemName: "pin.fill").font(.system(size: 9))
@@ -113,8 +114,10 @@ struct ClipListView: View {
             ? "Resume capture below to start collecting new copies."
             : "Copy something in any app, then press \(model.shortcut.display)."
     }
-    func groupLabel(at index: Int) -> String? {
-        let clips = model.results
+    /// Headings are computed from the same snapshot the rows came from; SwiftUI can
+    /// re-evaluate a row with its old index while results change, so never index live data.
+    func groupLabel(at index: Int, in clips: [Clip]) -> String? {
+        guard clips.indices.contains(index) else { return nil }
         func label(_ clip: Clip) -> String {
             if clip.pinned { return "Pinned" }
             if Calendar.current.isDateInToday(clip.createdAt) { return "Today" }
