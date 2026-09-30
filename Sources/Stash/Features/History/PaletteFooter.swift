@@ -26,6 +26,10 @@ struct PaletteFooter: View {
                     }
                 }.padding(.horizontal, 19).padding(.vertical, 10).background(.white.opacity(0.045))
             }
+            if model.showSharePrompt && !model.promptsActive && model.error == nil {
+                Rectangle().fill(Color.line).frame(height: 0.5)
+                SharePromptCard(model: model).transition(.move(edge: .bottom).combined(with: .opacity))
+            }
             Rectangle().fill(Color.line).frame(height: 0.5)
             if model.promptsActive {
                 HStack(spacing: 12) {

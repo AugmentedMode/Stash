@@ -133,6 +133,21 @@ Repeat manual keyboard navigation, prompt editing, inline Settings, screenshot
 pause/resume, and cross-app paste flows after UI changes. Automated core checks
 do not verify those interactions or older macOS compatibility.
 
+## Share card — September 30, 2026
+
+Rules are covered by `SharePromptWaitsForRealUse`, `SharePromptAsksAtMostTwice` and
+`SharePromptStopsAfterShareAndSurvivesRelaunch`. To see the card with sample data:
+
+```sh
+'dist/Stash QA.app/Contents/MacOS/Stash' --demo --share-prompt
+```
+
+- Share opens the macOS share sheet with the text and `https://heystash.io/?ref=share`; the card closes.
+- Star opens the GitHub repository; the card closes.
+- × → Maybe later and × → Don't ask again both close the card.
+- In a real build: paste an older clip (not the newest) 10 times across 3 days, reopen Stash, and verify the card appears once with the count. "Maybe later" brings it back once after 21 days.
+- Menu bar right-click → Share Stash… and Settings → About → Share Stash open the share sheet anytime.
+
 ## Public download on fresh Macs
 
 Run the **Public download smoke test** workflow manually in GitHub Actions after
