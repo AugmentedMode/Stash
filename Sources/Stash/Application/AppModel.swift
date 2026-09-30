@@ -429,16 +429,32 @@ final class AppModel: ObservableObject {
     /// menu closes; removing it while the menu opens breaks both.
     private var shareDelegate: ShareMenuDelegate?
     func shareStash(from view: NSView?) {
+        showShareMenu(from: view) { [weak self] shared in if shared { self?.finishSharePrompt() } }
+    }
+    /// The share menu used by the card, the menu bar and Settings, with Copy Link first.
+    func showShareMenu(from view: NSView?, onDone: ((Bool) -> Void)? = nil) {
         guard let view, view.window != nil else { return }
         let picker = NSSharingServicePicker(items: [Self.shareText, Self.shareURL])
-        let delegate = ShareMenuDelegate { [weak self] shared in
-            guard let self else { return }
-            if shared { self.finishSharePrompt() }
-            self.shareDelegate = nil
+        let delegate = ShareMenuDelegate(extra: [copyLinkService()]) { [weak self] shared in
+            onDone?(shared)
+            self?.shareDelegate = nil
         }
         shareDelegate = delegate
         picker.delegate = delegate
         picker.show(relativeTo: view.bounds, of: view, preferredEdge: .minY)
+    }
+    /// "Copy Link" at the top of the share menu.
+    func copyLinkService() -> NSSharingService {
+        NSSharingService(
+            title: "Copy Link", image: NSImage(systemSymbolName: "link", accessibilityDescription: nil)!,
+            alternateImage: nil
+        ) { [weak self] in
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(Self.shareURL.absoluteString, forType: .string)
+            // Stash's own link shouldn't land in this person's history.
+            self?.clipboard.skipCurrentChange()
+            self?.message("Link copied")
+        }
     }
     func starStash() {
         NSWorkspace.shared.open(URL(string: "https://github.com/AugmentedMode/Stash")!)
@@ -510,10 +526,18 @@ final class AppModel: ObservableObject {
     }
 }
 
-/// Reports whether the person picked a way to share or closed the menu.
+/// Adds Stash's own items to the share menu and reports whether the person picked one.
 final class ShareMenuDelegate: NSObject, NSSharingServicePickerDelegate {
+    private let extra: [NSSharingService]
     private let done: (Bool) -> Void
-    init(done: @escaping (Bool) -> Void) { self.done = done }
+    init(extra: [NSSharingService], done: @escaping (Bool) -> Void) {
+        self.extra = extra
+        self.done = done
+    }
+    func sharingServicePicker(
+        _ picker: NSSharingServicePicker, sharingServicesForItems items: [Any],
+        proposedSharingServices proposed: [NSSharingService]
+    ) -> [NSSharingService] { extra + proposed }
     func sharingServicePicker(_ picker: NSSharingServicePicker, didChoose service: NSSharingService?) {
         DispatchQueue.main.async { self.done(service != nil) }
     }
