@@ -214,6 +214,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             menu.addItem(
                 withTitle: model.paused ? "Resume capture" : "Pause capture", action: #selector(pauseAction),
                 keyEquivalent: "")
+            menu.addItem(
+                withTitle: "Change Shortcut (\(model.shortcut.display))…",
+                action: #selector(changeShortcutAction),
+                keyEquivalent: "")
             if model.updates.isAvailable {
                 menu.addItem(
                     withTitle: "Check for Updates…", action: #selector(checkForUpdatesAction),
@@ -235,6 +239,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc func openAction() { show() }
     @objc func pauseAction() { model.paused.toggle() }
     @objc func checkForUpdatesAction() { model.updates.checkForUpdates() }
+    @objc func changeShortcutAction() {
+        model.openShortcutSettings()
+        show()
+    }
     func applicationWillTerminate(_ notification: Notification) {
         model.terminate()
         if let hotKey { UnregisterEventHotKey(hotKey) }

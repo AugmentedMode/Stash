@@ -35,6 +35,60 @@ struct HotkeyShortcut: Codable, Equatable {
         kVK_F12, kVK_F13, kVK_F14, kVK_F15, kVK_F16, kVK_F17, kVK_F18, kVK_F19,
     ]
 
+    /// Offered as one-click choices in Settings, least likely to clash first.
+    static let suggestions: [HotkeyShortcut] = [
+        HotkeyShortcut(keyCode: UInt32(kVK_ANSI_V), modifiers: UInt32(controlKey | cmdKey), key: "V"),
+        HotkeyShortcut(keyCode: UInt32(kVK_ANSI_V), modifiers: UInt32(optionKey | cmdKey), key: "V"),
+        .standard,
+    ]
+
+    /// How well a shortcut works as a global hotkey. A global hotkey wins over every app,
+    /// so a clash silently takes that keystroke away everywhere.
+    enum Fit: Equatable {
+        case good
+        /// Usable, but another common command shares it.
+        case clash(String)
+        /// Would break typing or a system feature, so Stash refuses it.
+        case blocked(String)
+    }
+
+    var fit: Fit {
+        let cmd = UInt32(cmdKey), shift = UInt32(shiftKey), option = UInt32(optionKey)
+        let control = UInt32(controlKey)
+        let code = Int(keyCode)
+        if modifiers == cmd && !Self.functionKeys.contains(code) {
+            return .blocked("\(display) is a menu command in most apps. Add ⌃, ⌥ or ⇧.")
+        }
+        let reserved: [(Int, UInt32, String)] = [
+            (kVK_Space, cmd, "opens Spotlight"), (kVK_Space, option | cmd, "opens Finder search"),
+            (kVK_Space, control, "switches input sources"),
+            (kVK_Space, control | option, "switches input sources"),
+            (kVK_Space, control | cmd, "opens the emoji picker"), (kVK_Tab, cmd, "switches apps"),
+            (kVK_Tab, shift | cmd, "switches apps"), (kVK_ANSI_Grave, cmd, "switches windows"),
+            (kVK_ANSI_3, shift | cmd, "takes a screenshot"), (kVK_ANSI_4, shift | cmd, "takes a screenshot"),
+            (kVK_ANSI_5, shift | cmd, "opens Screenshot"),
+            (kVK_ANSI_6, shift | cmd, "captures the Touch Bar"),
+            (kVK_ANSI_Q, control | cmd, "locks your Mac"), (kVK_Escape, option | cmd, "opens Force Quit"),
+        ]
+        if let match = reserved.first(where: { $0.0 == code && $0.1 == modifiers }) {
+            return .blocked("\(display) \(match.2). Try another shortcut.")
+        }
+        let clashes: [(Int, UInt32, String)] = [
+            (
+                kVK_ANSI_V, shift | cmd,
+                "pastes without formatting in Slack, Chrome, Notion and many other apps"
+            ),
+            (kVK_ANSI_V, option | shift | cmd, "is Paste and Match Style in Mail, Notes and Pages"),
+            (kVK_ANSI_V, option | cmd, "moves copied files in Finder"),
+            (kVK_ANSI_C, shift | cmd, "opens the Computer window in Finder and dev tools in browsers"),
+            (kVK_ANSI_F, control | cmd, "toggles full screen"),
+        ]
+        if let match = clashes.first(where: { $0.0 == code && $0.1 == modifiers }) {
+            return .clash("\(display) also \(match.2). While Stash uses it, those apps won’t receive it.")
+        }
+        return .good
+    }
+
     /// Returns nil for keys that would steal ordinary typing, such as a bare letter or ⇧A.
     init?(event: NSEvent) {
         let code = Int(event.keyCode)

@@ -65,6 +65,15 @@ struct SettingsView: View {
             }
             model.requestedSettingsTab = nil
         }
+        .onChange(of: model.requestedSettingsTab) { _, name in
+            guard let name,
+                let requested = SettingsTab.allCases.first(where: {
+                    $0.rawValue.lowercased() == name.lowercased()
+                })
+            else { return }
+            tab = requested
+            model.requestedSettingsTab = nil
+        }
         .onDisappear {
             model.screenshotSettingsRequested = false
             model.recordingShortcut = false
@@ -185,11 +194,36 @@ struct SettingsView: View {
             SettingsRow(
                 icon: "command", title: "Open Stash",
                 subtitle: model.recordingShortcut
-                    ? "Press the new shortcut. Esc cancels, Delete restores ⌘⇧V."
-                    : "Show or hide Stash from any app."
+                    ? "Press the new shortcut. Esc cancels, Delete restores \(HotkeyShortcut.standard.display)."
+                    : "Show or hide Stash from any app. Click the keys to change them."
             ) {
                 ShortcutRecorder(model: model)
             }
+            if model.recordingShortcut, let hint = model.shortcutRecordingHint {
+                SettingsDivider()
+                SettingsRow(
+                    icon: "hand.raised", tint: .settingsOrange, title: "Try a different shortcut",
+                    subtitle: hint)
+            } else if !model.recordingShortcut, case .clash(let reason) = model.shortcut.fit {
+                SettingsDivider()
+                SettingsRow(
+                    icon: "exclamationmark.triangle", tint: .settingsOrange, title: "This shortcut is shared",
+                    subtitle: reason
+                ) {
+                    if let better = HotkeyShortcut.suggestions.first(where: { $0.fit == .good }) {
+                        Button("Use \(better.display)") { model.shortcut = better }
+                            .buttonStyle(SettingsButtonStyle(kind: .prominent))
+                    }
+                }
+            }
+            SettingsDivider()
+            HStack(spacing: 8) {
+                Text("Suggestions").font(.system(size: 11)).foregroundStyle(Color.quiet)
+                ForEach(HotkeyShortcut.suggestions, id: \.display) { suggestion in
+                    shortcutChip(suggestion)
+                }
+                Spacer(minLength: 0)
+            }.padding(.leading, 54).padding(.trailing, 14).padding(.vertical, 10)
             if let issue = model.shortcutIssue {
                 SettingsDivider()
                 SettingsRow(icon: "exclamationmark.triangle", tint: .settingsOrange, title: issue)
@@ -227,6 +261,36 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    private func shortcutChip(_ shortcut: HotkeyShortcut) -> some View {
+        let active = model.shortcut == shortcut
+        let note: String
+        switch shortcut.fit {
+        case .good: note = "Rarely used by other apps"
+        case .clash(let reason), .blocked(let reason): note = reason
+        }
+        return Button {
+            model.recordingShortcut = false
+            model.shortcut = shortcut
+        } label: {
+            HStack(spacing: 4) {
+                Text(shortcut.display).font(.system(size: 12, weight: .medium, design: .rounded))
+                if case .clash = shortcut.fit {
+                    Circle().fill(Color.settingsOrange).frame(width: 5, height: 5)
+                }
+            }
+            .foregroundStyle(active ? Color.white : Color.muted)
+            .padding(.horizontal, 9).padding(.vertical, 4)
+            .background(active ? Color.accent.opacity(0.16) : .white.opacity(0.05), in: Capsule())
+            .overlay(
+                Capsule().strokeBorder(
+                    active ? Color.accent.opacity(0.3) : Color.white.opacity(0.06), lineWidth: 0.5)
+            )
+            .contentShape(Capsule())
+        }.buttonStyle(.plain).help(note)
+            .accessibilityLabel("Use \(shortcut.display). \(note)")
+            .accessibilityAddTraits(active ? .isSelected : [])
     }
 
     private func requestAccessibility() {
@@ -570,7 +634,8 @@ struct ShortcutRecorder: View {
                 } label: {
                     Image(systemName: "arrow.counterclockwise").font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(Color.quiet)
-                }.buttonStyle(.plain).help("Restore ⌘⇧V").accessibilityLabel("Restore default shortcut")
+                }.buttonStyle(.plain).help("Restore \(HotkeyShortcut.standard.display)").accessibilityLabel(
+                    "Restore default shortcut")
             }
             Button {
                 model.recordingShortcut.toggle()

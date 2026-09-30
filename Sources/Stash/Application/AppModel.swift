@@ -25,12 +25,23 @@ final class AppModel: ObservableObject {
     }
     /// While true, the next key press becomes the shortcut and the current one is released.
     @Published var recordingShortcut = false {
-        didSet { if recordingShortcut != oldValue { onShortcutChange?() } }
+        didSet {
+            guard recordingShortcut != oldValue else { return }
+            shortcutRecordingHint = nil
+            onShortcutChange?()
+        }
     }
+    /// Opens Settings → General, where the shortcut is changed.
+    func openShortcutSettings() {
+        requestedSettingsTab = "General"
+        settingsOpen = true
+    }
+    /// Why the last key press while recording was refused.
+    @Published var shortcutRecordingHint: String?
     var onShortcutChange: (() -> Void)?
     var screenshotSettingsRequested = false
     /// Preview builds can open a settings tab directly with `--settings <tab>`.
-    var requestedSettingsTab: String?
+    @Published var requestedSettingsTab: String?
     @Published var promptsActive = false
     @Published var promptSelection: UUID?
     @Published var promptDetailOpen = false

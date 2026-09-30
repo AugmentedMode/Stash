@@ -39,6 +39,8 @@ struct WelcomeView: View {
             HStack(spacing: 7) {
                 Text("Always one shortcut away").foregroundStyle(Color.muted)
                 ForEach(model.shortcut.symbols, id: \.self) { KeyCap(text: $0) }
+                Button("Change") { model.openShortcutSettings() }.buttonStyle(.plain)
+                    .foregroundStyle(Color.accent).help("Pick a different shortcut")
             }.font(.system(size: 12)).padding(.bottom, 24)
         }.frame(maxWidth: .infinity).padding(.top, 22)
     }

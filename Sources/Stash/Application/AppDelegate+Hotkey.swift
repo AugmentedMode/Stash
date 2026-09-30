@@ -51,6 +51,14 @@ extension AppDelegate {
             return
         }
         guard let shortcut = HotkeyShortcut(event: event) else {
+            // Modifier-only presses arrive as flagsChanged, so this is a bare key like "A".
+            model.shortcutRecordingHint =
+                "Include ⌘, ⌃ or ⌥, so the shortcut doesn’t get in the way of typing."
+            NSSound.beep()
+            return
+        }
+        if case .blocked(let reason) = shortcut.fit {
+            model.shortcutRecordingHint = reason
             NSSound.beep()
             return
         }
