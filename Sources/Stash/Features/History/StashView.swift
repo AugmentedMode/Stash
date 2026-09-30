@@ -13,7 +13,7 @@ struct StashView: View {
     private var surface: some View {
         Group {
             if model.settingsOpen {
-                SettingsView(model: model)
+                SettingsView(model: model, updates: model.updates)
             } else if model.started {
                 palette
             } else {
@@ -242,7 +242,17 @@ struct StashView: View {
                     }
                     .accessibilityLabel("More categories")
                 Spacer(minLength: 0)
-                if model.paused {
+                if let version = model.availableUpdate {
+                    Button {
+                        model.updates.checkForUpdates()
+                    } label: {
+                        Label("Update to \(version)", systemImage: "arrow.down.circle.fill")
+                    }
+                    .font(.system(size: 10, weight: .medium)).foregroundStyle(Color.accent).buttonStyle(
+                        .plain
+                    )
+                    .help("A new version of Stash is ready to install")
+                } else if model.paused {
                     Button {
                         model.paused = false
                     } label: {

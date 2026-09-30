@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 import StashCore
 
@@ -158,7 +159,12 @@ final class AppModel: ObservableObject {
             })
     }
     let demo: Bool
+    let updates: UpdateController
+    /// Mirrors `updates.availableVersion` so the palette redraws when an update is found.
+    @Published var availableUpdate: String?
+    private var updateSubscription: AnyCancellable?
     let defaults: UserDefaults
+    /// The pre-1.0.5 single-file history, migrated into `History/` on first launch.
     let diskURL: URL
     var showPanel: (() -> Void)?
     var hidePanel: (() -> Void)?
@@ -175,9 +181,11 @@ final class AppModel: ObservableObject {
         willSleep: { [weak self] in self?.writer.flush() }
     )
     private let clipboard = ClipboardObserver()
+    private lazy var store = HistoryStore(
+        directory: diskURL.deletingLastPathComponent().appendingPathComponent("History"), legacyURL: diskURL)
     private lazy var writer = HistoryWriter(
-        write: { [weak self, diskURL] snapshot in
-            try HistoryDisk.save(snapshot, to: diskURL)
+        write: { [weak self, store] snapshot in
+            try store.save(snapshot)
             DispatchQueue.main.async { self?.error = nil }
         },
         onError: { [weak self] _ in
@@ -197,6 +205,7 @@ final class AppModel: ObservableObject {
     var selected: Clip? { results.first { $0.id == selection } ?? results.first }
     init(demo: Bool) {
         self.demo = demo
+        updates = UpdateController(enabled: !demo && Bundle.main.bundleIdentifier != "app.stash.qa")
         defaults = demo ? UserDefaults(suiteName: "app.stash.preview")! : .standard
         diskURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Stash/history.json")
@@ -222,7 +231,7 @@ final class AppModel: ObservableObject {
         if demo {
             history = Self.examples()
         } else if !memoryOnly {
-            do { history = try HistoryDisk.load(from: diskURL) } catch {
+            do { history = try store.load() } catch {
                 historyLoadFailed = true
 
                 self.error = "Your saved history couldn’t be opened. It has been left untouched."
@@ -236,6 +245,7 @@ final class AppModel: ObservableObject {
             }
         }
         expire()
+        updateSubscription = updates.$availableVersion.sink { [weak self] in self?.availableUpdate = $0 }
         selection = results.first?.id
         if started && !demo { startMonitoring() }
     }
@@ -427,8 +437,7 @@ final class AppModel: ObservableObject {
     }
     var historyFileSize: Int64? {
         guard !memoryOnly else { return nil }
-        return (try? FileManager.default.attributesOfItem(atPath: diskURL.path)[.size] as? NSNumber)?
-            .int64Value
+        return store.bytesOnDisk
     }
     static var version: String {
         let info = Bundle.main.infoDictionary

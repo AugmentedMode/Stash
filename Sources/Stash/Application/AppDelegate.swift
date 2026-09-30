@@ -14,7 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var keyMonitor: Any?
     var previousApp: NSRunningApplication?
     var workspaceObserver: NSObjectProtocol?
-    private var presentationPending = false
+    var presentationPending = false
     func applicationDidFinishLaunching(_ notification: Notification) {
         let demo =
             CommandLine.arguments.contains("--demo")
@@ -24,6 +24,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         model.hidePanel = { [weak self] in self?.dismiss() }
         model.onPaste = { [weak self] clip, plain in self?.paste(clip, plain: plain) }
         model.onShortcutChange = { [weak self] in self?.registerHotkey() }
+        model.updates.willShowUpdateWindow = { [weak self] in
+            self?.presentationPending = false
+            self?.panel.orderOut(nil)
+        }
         if demo, let index = CommandLine.arguments.firstIndex(of: "--settings") {
             model.settingsOpen = true
             model.requestedSettingsTab = CommandLine.arguments.dropFirst(index + 1).first
@@ -210,6 +214,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             menu.addItem(
                 withTitle: model.paused ? "Resume capture" : "Pause capture", action: #selector(pauseAction),
                 keyEquivalent: "")
+            if model.updates.isAvailable {
+                menu.addItem(
+                    withTitle: "Check for Updates…", action: #selector(checkForUpdatesAction),
+                    keyEquivalent: "")
+            }
             menu.addItem(.separator())
             menu.addItem(
                 withTitle: "Quit Stash", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
@@ -225,6 +234,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
     @objc func openAction() { show() }
     @objc func pauseAction() { model.paused.toggle() }
+    @objc func checkForUpdatesAction() { model.updates.checkForUpdates() }
     func applicationWillTerminate(_ notification: Notification) {
         model.terminate()
         if let hotKey { UnregisterEventHotKey(hotKey) }

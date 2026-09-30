@@ -6,6 +6,7 @@ import StashCore
 
 struct SettingsView: View {
     @ObservedObject var model: AppModel
+    @ObservedObject var updates: UpdateController
     @State private var tab = SettingsTab.general
     @State private var confirmClear = false
     @State private var confirmMemory = false
@@ -466,6 +467,7 @@ struct SettingsView: View {
             }
             Spacer()
         }.padding(.horizontal, 4)
+        updatesSection
         SettingsSection(title: "Help") {
             linkRow("sparkles", "What’s new", "Release notes and downloads", "releases")
             SettingsDivider()
@@ -490,6 +492,56 @@ struct SettingsView: View {
                 subtitle: "Your history is saved first."
             ) {
                 Button("Quit") { NSApp.terminate(nil) }.buttonStyle(SettingsButtonStyle())
+            }
+        }
+    }
+
+    @ViewBuilder private var updatesSection: some View {
+        SettingsSection(
+            title: "Updates",
+            footnote:
+                "Checking for updates is the only thing Stash sends over the network: a request to GitHub for the list of signed releases. It never includes your clips or anything that identifies you."
+        ) {
+            if updates.isAvailable {
+                SettingsRow(
+                    icon: "arrow.triangle.2.circlepath", tint: .settingsBlue,
+                    title: "Check for updates automatically",
+                    subtitle: "Once a day, quietly. New versions appear as a badge in Stash."
+                ) {
+                    SettingsSwitch(
+                        title: "Check for updates automatically", isOn: $updates.checksAutomatically)
+                }
+                SettingsDivider()
+                SettingsRow(
+                    icon: "arrow.down.circle", tint: .settingsBlue, title: "Install updates automatically",
+                    subtitle: "Download in the background and install the next time Stash quits."
+                ) {
+                    SettingsSwitch(
+                        title: "Install updates automatically", isOn: $updates.installsAutomatically
+                    )
+                    .disabled(!updates.checksAutomatically)
+                }
+                SettingsDivider()
+                SettingsRow(
+                    icon: "clock", tint: .settingsBlue,
+                    title: updates.availableVersion.map { "Version \($0) is available" }
+                        ?? "You’re up to date",
+                    subtitle: updates.lastChecked.map {
+                        "Last checked \($0.formatted(.relative(presentation: .named)))"
+                    } ?? "Not checked yet"
+                ) {
+                    Button(updates.availableVersion == nil ? "Check Now" : "Update…") {
+                        updates.checkForUpdates()
+                    }
+                    .buttonStyle(
+                        SettingsButtonStyle(kind: updates.availableVersion == nil ? .normal : .prominent)
+                    )
+                    .disabled(!updates.canCheck)
+                }
+            } else {
+                SettingsRow(
+                    icon: "arrow.triangle.2.circlepath", tint: .settingsBlue, title: "Updates",
+                    subtitle: "Update checks run in the installed app, not in preview or development builds.")
             }
         }
     }

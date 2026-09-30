@@ -31,7 +31,7 @@ struct WelcomeView: View {
                     ).padding(.vertical, 14).background(Color.accent, in: RoundedRectangle(cornerRadius: 12))
                 }.buttonStyle(.plain)
                 Text(
-                    "Saves new copies on this Mac for 30 days.\nPassword-manager marked secrets are skipped."
+                    "Saves new copies on this Mac for 30 days. Password-manager secrets are skipped.\nStash checks GitHub for updates; your clips never leave your Mac."
                 ).font(.system(size: 12)).foregroundStyle(Color.muted).multilineTextAlignment(.center)
                     .lineSpacing(4)
             }.padding(.top, 12)
