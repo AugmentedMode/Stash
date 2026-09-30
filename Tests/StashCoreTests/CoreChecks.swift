@@ -63,6 +63,14 @@ import AppKit
             ("LinkDomainBoundaries", suite.testLinkDomainBoundaries),
             ("LinkSearchAndOriginalPayload", suite.testLinkSearchAndOriginalPayload),
             ("DiskRoundTripAndPermissions", suite.testDiskRoundTripAndPermissions),
+            ("StoreRoundTripKeepsPayloadsOutOfIndex", suite.testStoreRoundTripKeepsPayloadsOutOfIndex),
+            (
+                "StoreWritesOnlyNewPayloadsAndRemovesOldOnes",
+                suite.testStoreWritesOnlyNewPayloadsAndRemovesOldOnes
+            ),
+            ("StoreMigratesLegacyHistoryOnce", suite.testStoreMigratesLegacyHistoryOnce),
+            ("StoreLeavesUnreadableDataUntouched", suite.testStoreLeavesUnreadableDataUntouched),
+            ("StoreDropsImagesWhosePayloadIsMissing", suite.testStoreDropsImagesWhosePayloadIsMissing),
             ("EmptyDiskAndEmptyClipboard", suite.testEmptyDiskAndEmptyClipboard),
         ]
         for (name, run) in tests {

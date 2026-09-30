@@ -37,6 +37,23 @@ public struct Clip: Codable, Identifiable, Equatable {
         self.customTitle = customTitle
         self.fingerprint = Self.makeFingerprint(kind: kind, text: text, items: items)
     }
+    /// Same clip with a different payload, keeping the stored fingerprint. Storage uses
+    /// this to split clip details from pasteboard data without rehashing large payloads.
+    func withItems(_ items: [[String: Data]]) -> Clip { Clip(copying: self, items: items) }
+    private init(copying clip: Clip, items: [[String: Data]]) {
+        id = clip.id
+        createdAt = clip.createdAt
+        sourceName = clip.sourceName
+        sourceBundle = clip.sourceBundle
+        sourceTitle = clip.sourceTitle
+        sourceURL = clip.sourceURL
+        kind = clip.kind
+        text = clip.text
+        customTitle = clip.customTitle
+        pinned = clip.pinned
+        self.items = items
+        fingerprint = clip.fingerprint
+    }
     public var title: String {
         text.split(maxSplits: 1, whereSeparator: \.isNewline).first.map(String.init) ?? kind.title
     }
