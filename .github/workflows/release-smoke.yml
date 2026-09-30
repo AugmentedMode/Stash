@@ -45,14 +45,11 @@ jobs:
           /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist"
           otool -L "$app/Contents/MacOS/Stash"
           xattr -p com.apple.quarantine "$app" || true
-          # Assessment is reported, not bypassed. Rejection is expected without notarization.
-          set +e
-          spctl --assess --type execute --verbose=2 "$app" > "$RUNNER_TEMP/gatekeeper.txt" 2>&1
-          result=$?
-          set -e
-          cat "$RUNNER_TEMP/gatekeeper.txt"
-          echo "Gatekeeper assessment exit status: $result" >> "$GITHUB_STEP_SUMMARY"
-          echo 'This workflow does not approve Open Anyway or grant Accessibility permission.' >> "$GITHUB_STEP_SUMMARY"
+          # Official releases must retain Apple's approval after download.
+          xcrun stapler validate "$app"
+          spctl --assess --type execute --verbose=2 "$app"
+          echo 'Passed: stapled ticket and Gatekeeper assessment.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Interactive launch prompts and Accessibility permission are not tested.' >> "$GITHUB_STEP_SUMMARY"
       - name: Smoke-test normal and sample-data process startup
         run: |
           set -euo pipefail

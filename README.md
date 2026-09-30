@@ -57,10 +57,9 @@ brew install --cask augmentedmode/stash/stash
 Or [download the latest DMG](https://github.com/AugmentedMode/Stash/releases/latest),
 open it, and drag Stash into Applications.
 
-**First launch:** Stash is ad-hoc signed, without Apple Developer ID signing or
-notarization. If macOS blocks it, attempt to open Stash, then go to **System
-Settings → Privacy & Security → Open Anyway** and confirm if you trust this
-release. See [Apple's instructions](https://support.apple.com/102445).
+**Signed and notarized:** Official downloads from version 1.0.2 onward are
+Developer ID signed and notarized by Apple. Open Stash from Applications and
+confirm the standard downloaded-app prompt. Earlier releases were ad-hoc signed.
 
 Open Stash from Applications and choose **Start collecting**. Quick paste is
 optional and needs Accessibility permission. After an update, you may need to

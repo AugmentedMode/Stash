@@ -143,7 +143,7 @@ seconds each. The sample-data run exercises service-icon lookups and catches
 accidental dependencies on the developer's SwiftPM resource directory.
 
 This checks installation and process survival, not interactive UI correctness.
-Gatekeeper assessment is recorded without changing quarantine or granting an
-exception. Finder's Open Anyway flow, Accessibility consent, and cross-app paste
+Gatekeeper acceptance and a valid stapled notarization ticket are required,
+without changing quarantine or granting an exception. Finder's Open Anyway flow, Accessibility consent, and cross-app paste
 still need interactive testing. GitHub runners have developer tools preinstalled
 and are not identical to a factory-reset consumer Mac.
