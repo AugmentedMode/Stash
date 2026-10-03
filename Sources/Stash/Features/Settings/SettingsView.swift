@@ -10,6 +10,7 @@ struct SettingsView: View {
     @State private var tab = SettingsTab.general
     @State private var confirmClear = false
     @State private var confirmMemory = false
+    @State private var floatingThumbnail = false
     @State private var trusted = AXIsProcessTrusted()
     @State private var lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
     @State private var openAtLogin = LoginItem.isEnabled
@@ -397,14 +398,28 @@ struct SettingsView: View {
                 SettingsRow(
                     icon: "doc.on.clipboard", tint: .settingsTeal, title: "Copy new screenshots",
                     subtitle: model.screenshotAutoCopy
-                        ? "Take a screenshot, then press ⌘V. A newer copy always wins."
+                        ? "Take a screenshot, then press ⌘V (⌃V in Claude Code or a terminal). A newer copy always wins."
                         : "Screenshots go into history. Your clipboard stays as it is."
                 ) {
                     SettingsSwitch(
                         title: "Copy new screenshots to clipboard", isOn: $model.screenshotAutoCopy)
                 }
+                if floatingThumbnail {
+                    SettingsDivider()
+                    SettingsRow(
+                        icon: "timer", tint: .settingsOrange, title: "macOS waits ~5s before saving",
+                        subtitle:
+                            "The floating thumbnail holds each screenshot back until it disappears. Turn it off to paste right away."
+                    ) {
+                        Button("Turn off thumbnail") {
+                            ScreenshotPreferences.hideFloatingThumbnail()
+                            floatingThumbnail = ScreenshotPreferences.showsFloatingThumbnail
+                        }.buttonStyle(SettingsButtonStyle())
+                    }
+                }
             }
         }
+        .onAppear { floatingThumbnail = ScreenshotPreferences.showsFloatingThumbnail }
         SettingsSection(
             title: "Folder",
             footnote:
@@ -423,14 +438,25 @@ struct SettingsView: View {
                 }
             }
             SettingsDivider()
-            SettingsRow(
-                icon: model.screenshotIssue == nil
-                    ? "dot.radiowaves.left.and.right" : "exclamationmark.triangle",
-                tint: model.screenshotIssue == nil ? .settingsGreen : .settingsOrange,
-                title: model.screenshotStatus)
+            TimelineView(.periodic(from: .now, by: 15)) { context in
+                SettingsRow(
+                    icon: model.screenshotIssue == nil
+                        ? "dot.radiowaves.left.and.right" : "exclamationmark.triangle",
+                    tint: model.screenshotIssue == nil ? .settingsGreen : .settingsOrange,
+                    title: model.screenshotStatus, subtitle: lastScreenshot(now: context.date))
+            }
         }
     }
 
+    private func lastScreenshot(now: Date) -> String? {
+        guard model.screenshotsEnabled, model.screenshotIssue == nil, let date = model.lastScreenshotAt else {
+            return nil
+        }
+        if now.timeIntervalSince(date) < 15 { return "Last screenshot just now" }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return "Last screenshot " + formatter.localizedString(for: date, relativeTo: now)
+    }
     private var folderName: String {
         FileManager.default.displayName(atPath: model.screenshotFolder)
     }

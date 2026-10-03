@@ -35,12 +35,15 @@ Settings opens inline with **⌘,**; Back or Escape returns to the previous view
 
 ## Collect saved screenshots
 
-Open **Screenshots → Set up screenshots**, then enable **Collect saved screenshots**.
-Choose the same save folder as macOS Screenshot (**⇧⌘5 → Options**). Stash initially
+**Collect saved screenshots** is on for new installs; existing installs can enable it
+under **Screenshots → Set up screenshots**. Choose the same save folder as macOS Screenshot (**⇧⌘5 → Options**). Stash initially
 uses the configured macOS location, or Desktop when no location is configured.
 
-**Copy new screenshots to clipboard** is on by default within this opt-in feature.
-Take a screenshot, wait for macOS to save it, then paste with **⌘V**. Turn that
+**Copy new screenshots to clipboard** is on by default.
+Take a screenshot, then paste with **⌘V** once the "Screenshot copied" toast
+appears (**⌃V** in Claude Code and other terminal apps). macOS holds the file back
+while its floating thumbnail is visible; settings offers to turn the thumbnail off
+so screenshots are ready immediately. Turn that
 second switch off to collect screenshots without changing your clipboard. Newer
 clipboard activity takes priority over an image still being processed.
 

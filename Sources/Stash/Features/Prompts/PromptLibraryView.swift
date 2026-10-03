@@ -34,8 +34,13 @@ struct PromptLibraryView: View {
                     .font(.system(size: 13)).foregroundStyle(Color.muted).multilineTextAlignment(.center)
                     .frame(maxWidth: 350)
                     if model.query.isEmpty {
-                        Button("Create a prompt", systemImage: "plus") { model.newPrompt() }
-                            .buttonStyle(.borderedProminent).disabled(model.promptLoadFailed)
+                        Button {
+                            model.newPrompt()
+                        } label: {
+                            Label("Create a prompt", systemImage: "plus").labelStyle(.titleAndIcon)
+                        }
+                        .buttonStyle(AccentButtonStyle()).disabled(model.promptLoadFailed)
+                        .help("New prompt · ⌘N").padding(.top, 4)
                     } else {
                         Button("Clear search") { model.query = "" }.buttonStyle(.plain).foregroundStyle(
                             Color.accent)

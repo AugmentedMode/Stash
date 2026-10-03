@@ -148,6 +148,28 @@ Rules are covered by `SharePromptWaitsForRealUse`, `SharePromptAsksAtMostTwice` 
 - In a real build: paste an older clip (not the newest) 10 times across 3 days, reopen Stash, and verify the card appears once with the count. "Maybe later" brings it back once after 21 days.
 - Menu bar right-click → Share Stash… and Settings → About → Share Stash open the share sheet anytime.
 
+## Screenshot toast and onboarding — October 3, 2026
+
+Release 1.0.8. 51 core checks pass and `format.sh --check` is clean.
+
+Live checks in the signed release build:
+- A file marked as a macOS screenshot was written to the watched folder. The
+  "Screenshot copied" toast window appeared top-centre under the menu bar within
+  0.6 s. The clipboard held `PNGf` (what Claude Code's ⌃V reads), and the toast
+  ordered itself out within about 5 s.
+- `ScreenshotPreferences.hideFloatingThumbnail()` set `com.apple.screencapture
+  show-thumbnail` to 0 as read by `defaults`. The original value was restored.
+- A fresh install (no `started` key) saved `screenshotsEnabled = 1`; existing
+  installs keep their stored value.
+
+Offscreen renders checked the toast pill, the welcome screen (headline, shortcut
+card, screenshot line, full two-line privacy note at the default size), and the
+prompts empty-state button.
+
+Still manual: toast hover/click and multiple displays, whether the next capture
+honours the thumbnail change without a restart, the Desktop/Documents folder-access
+prompt on first start (Allow and Don't Allow), and ⌃V paste into Claude Code.
+
 ## Public download on fresh Macs
 
 Run the **Public download smoke test** workflow manually in GitHub Actions after

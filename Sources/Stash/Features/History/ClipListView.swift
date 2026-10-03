@@ -20,7 +20,7 @@ struct ClipListView: View {
                             model.screenshotSettingsRequested = true
                             model.settingsOpen = true
                         }
-                        .buttonStyle(.borderedProminent).tint(Color.accent)
+                        .buttonStyle(AccentButtonStyle())
                     }
                     if !model.query.isEmpty || model.category != nil || model.pinnedOnly {
                         Button("Show all clips") {

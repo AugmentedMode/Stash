@@ -42,7 +42,7 @@ Bug reports and contributions are welcome, too.
 - **Find a previous copy.** Search your history, filter by content type, and navigate with the keyboard.
 - **Keep the useful things.** Pin clips, give them readable names, and paste without formatting.
 - **Recognize your links.** See service icons and readable page or ticket labels derived locally from the original URL.
-- **Browse images and screenshots.** Use the thumbnail grid, fitted previews, and zoom. Optionally collect newly saved macOS screenshots.
+- **Browse images and screenshots.** Use the thumbnail grid, fitted previews, and zoom. New macOS screenshots are collected and copied, ready to paste.
 - **Reuse your prompts.** Save named templates with fields like `{{topic}}` and `{{tone}}`. Fill them in and copy or paste—no AI service involved.
 - **Choose what stays.** Pause capture, exclude apps, set retention, or keep clipboard history only for the current session.
 
@@ -152,7 +152,7 @@ files have owner-only permissions. **They are unencrypted, not a vault.**
 - Session-only mode clears saved clipboard history and discards current clips—including pins—on quit. Saved prompts remain separate.
 - Sensitive clipboard markers and common password-manager apps are excluded. **Unmarked secrets from other apps can still enter history.** Add app exclusions or pause capture when needed.
 - File clips reference the originals. Moving or deleting a file can make its clip unavailable.
-- Screenshot collection is opt-in. Saved screenshots cannot be attributed to an app, so app exclusions do not filter them.
+- Screenshot collection is on for new installs and can be turned off in Settings → Screenshots. Saved screenshots cannot be attributed to an app, so app exclusions do not filter them.
 
 Stash never logs clipboard contents. History writes are coalesced for up to one
 second, so an abrupt crash can lose the most recent changes.

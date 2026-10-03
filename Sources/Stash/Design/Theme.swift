@@ -21,3 +21,18 @@ extension Color {
             blue: Double(n & 255) / 255)
     }
 }
+
+/// The welcome screen's lavender call to action, sized for empty states.
+struct AccentButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.canvas)
+            .padding(.horizontal, 16).padding(.vertical, 9)
+            .background(Color.accent, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.4)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}

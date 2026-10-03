@@ -128,6 +128,8 @@ final class AppModel: ObservableObject {
         }
     }
     @Published var screenshotIssue: String?
+    @Published var lastScreenshotAt: Date?
+    var onScreenshotCopied: ((Clip) -> Void)?
     private let screenshots = ScreenshotObserver()
     private var screenshotGeneration = UUID()
     private var lastClipboardActivity = Date.distantPast
@@ -160,6 +162,7 @@ final class AppModel: ObservableObject {
                 guard let self, self.screenshotGeneration == generation else { return }
                 self.history.insert(clip, limit: self.historyLimit)
                 self.save()
+                self.lastScreenshotAt = Date()
                 if self.selection == nil { self.selection = self.results.first?.id }
                 // Do not overwrite a copy made while this image was being prepared.
                 if self.screenshotAutoCopy && !self.clipboard.hasChanges
@@ -168,6 +171,7 @@ final class AppModel: ObservableObject {
                     if ClipboardCodec.restore(clip, to: .general) {
                         self.clipboard.skipCurrentChange()
                         self.message("Screenshot copied · ready to paste")
+                        self.onScreenshotCopied?(clip)
                     }
                 } else {
                     self.message("Screenshot saved to history")
@@ -240,7 +244,10 @@ final class AppModel: ObservableObject {
             }
             ?? .standard
         memoryOnly = defaults.bool(forKey: "memoryOnly")
-        screenshotsEnabled = defaults.bool(forKey: "screenshotsEnabled")
+        // On for new installs; existing installs keep the opt-in state they had.
+        screenshotsEnabled =
+            defaults.object(forKey: "screenshotsEnabled") as? Bool
+            ?? !(demo || defaults.bool(forKey: "started"))
         screenshotAutoCopy = defaults.object(forKey: "screenshotAutoCopy") as? Bool ?? true
         screenshotFolder =
             defaults.string(forKey: "screenshotFolder")
@@ -271,6 +278,9 @@ final class AppModel: ObservableObject {
         expire()
         updateSubscription = updates.$availableVersion.sink { [weak self] in self?.availableUpdate = $0 }
         selection = results.first?.id
+        if !demo && defaults.object(forKey: "screenshotsEnabled") == nil {
+            defaults.set(screenshotsEnabled, forKey: "screenshotsEnabled")
+        }
         if started && !demo { startMonitoring() }
     }
     func start() {

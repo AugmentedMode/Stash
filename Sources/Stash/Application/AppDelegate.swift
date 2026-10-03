@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var previousApp: NSRunningApplication?
     var workspaceObserver: NSObjectProtocol?
     var presentationPending = false
+    let screenshotToast = ScreenshotToastController()
     func applicationDidFinishLaunching(_ notification: Notification) {
         let demo =
             CommandLine.arguments.contains("--demo")
@@ -24,6 +25,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         model.hidePanel = { [weak self] in self?.dismiss() }
         model.onPaste = { [weak self] clip, plain in self?.paste(clip, plain: plain) }
         model.onShortcutChange = { [weak self] in self?.registerHotkey() }
+        model.onScreenshotCopied = { [weak self] clip in
+            // The open palette already shows its own footer toast.
+            guard let self, !self.panel.isVisible else { return }
+            self.screenshotToast.show(clip)
+        }
+        screenshotToast.onOpen = { [weak self] clip in
+            self?.show()
+            self?.model.selection = clip.id
+        }
         model.updates.willShowUpdateWindow = { [weak self] in
             self?.presentationPending = false
             self?.panel.orderOut(nil)
@@ -89,6 +99,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         }
     }
     func show() {
+        screenshotToast.hide()
         if model.settingsOpen, panel.isVisible {
             presentationPending = true
             NSApp.activate(ignoringOtherApps: true)
